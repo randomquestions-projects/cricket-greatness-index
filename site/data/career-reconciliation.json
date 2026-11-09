@@ -1,0 +1,88 @@
+{
+  "generatedUTC": "2026-11-09T21:06:02+00:00",
+  "checks": [
+    {
+      "player": "Don Bradman",
+      "format": "test",
+      "referenceRuns": 6996,
+      "observedRuns": 6996,
+      "deltaRuns": 0,
+      "observedInnings": 80,
+      "firstObservedDate": "1928-11-30",
+      "lastObservedDate": "1948-08-14",
+      "sourceTiers": [
+        "historic-scorecard"
+      ],
+      "careerRunsReconciled": true,
+      "referenceUrl": "https://www.icc-cricket.com/hall-of-fame/hall-of-famers/hall-of-famer-donald-bradman"
+    },
+    {
+      "player": "Viv Richards",
+      "format": "test",
+      "referenceRuns": 8540,
+      "observedRuns": 8540,
+      "deltaRuns": 0,
+      "observedInnings": 182,
+      "firstObservedDate": "1974-11-22",
+      "lastObservedDate": "1991-08-08",
+      "sourceTiers": [
+        "historic-scorecard"
+      ],
+      "careerRunsReconciled": true,
+      "referenceUrl": "https://www.icc-cricket.com/rankings/2536/vivian-richards"
+    },
+    {
+      "player": "Viv Richards",
+      "format": "odi",
+      "referenceRuns": 6721,
+      "observedRuns": 6721,
+      "deltaRuns": 0,
+      "observedInnings": 167,
+      "firstObservedDate": "1975-06-11",
+      "lastObservedDate": "1991-05-27",
+      "sourceTiers": [
+        "historic-scorecard"
+      ],
+      "careerRunsReconciled": true,
+      "referenceUrl": "https://www.icc-cricket.com/rankings/2536/vivian-richards"
+    },
+    {
+      "player": "Sachin Tendulkar",
+      "format": "test",
+      "referenceRuns": 15921,
+      "observedRuns": 15921,
+      "deltaRuns": 0,
+      "observedInnings": 329,
+      "firstObservedDate": "1989-11-15",
+      "lastObservedDate": "2013-11-14",
+      "sourceTiers": [
+        "delivery",
+        "historic-scorecard"
+      ],
+      "careerRunsReconciled": true,
+      "referenceUrl": "https://www.icc-cricket.com/rankings/2962/sachin-tendulkar"
+    },
+    {
+      "player": "Sachin Tendulkar",
+      "format": "odi",
+      "referenceRuns": 18426,
+      "observedRuns": 18426,
+      "deltaRuns": 0,
+      "observedInnings": 452,
+      "firstObservedDate": "1989-12-18",
+      "lastObservedDate": "2012-03-18",
+      "sourceTiers": [
+        "delivery",
+        "historic-scorecard"
+      ],
+      "careerRunsReconciled": true,
+      "referenceUrl": "https://www.icc-cricket.com/rankings/2962/sachin-tendulkar"
+    }
+  ],
+  "checkedCareers": 5,
+  "passingCareers": 5,
+  "allReferenceCareerRunTotalsMatch": true,
+  "officialMatchByMatchCensusReconciled": false,
+  "allTimeRankingPermitted": false,
+  "limitation": "Matching a career run total does NOT prove match coverage, ball counts, dismissals, batting order, or identity matching. Official scorecard census and source-rights verification remain outstanding."
+}

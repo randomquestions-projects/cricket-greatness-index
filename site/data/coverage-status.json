@@ -1,0 +1,1451 @@
+{
+  "calculatedUTC": "2026-11-09T21:06:03+00:00",
+  "scope": "Non-overlapping historical scorecard batting records + Cricsheet international ball-by-ball records; NOT a certified official match census",
+  "deliveryObservedMatches": 7165,
+  "historicalObservedMatches": 4371,
+  "totalObservedMatches": 11536,
+  "earliestDeliveryDate": "2001-12-19",
+  "latestDeliveryDate": "2026-11-02",
+  "historicalSourceImported": true,
+  "historicalInnings": 103626,
+  "historicalSource": "https://raw.githubusercontent.com/dgolicher/cricket/master/",
+  "historicalCompletenessCertified": false,
+  "allTimeRankingPermitted": false,
+  "referenceCareerRunsPassing": 5,
+  "referenceCareerRunsChecked": 5,
+  "referenceCareerRunsAllMatch": true,
+  "historicalIdentityAmbiguities": 16,
+  "historicalDuplicatesSuppressed": 54565,
+  "officialCensusReconciliation": "NOT COMPLETED \u2014 no season-by-season official match-ID census",
+  "notes": [
+    "Positive source-match counts do not establish every official international match was captured.",
+    "Historical scorecard source spans the 1877\u20132017 era when available, but its year-by-year completeness is NOT verified.",
+    "Modern Cricsheet record wins for overlapping entire matches; historic source counts are non-overlapping matches only.",
+    "Historical batting position and balls faced are unavailable for some/all older source rows; never impute them.",
+    "Historical scorecard data is based on publicly posted ESPNcricinfo-derived data; source re-use rights need verification before republication.",
+    "Historical era-parity rankings are NOT equivalent to modern bowler-adjusted quality rankings.",
+    "Compare player career innings totals against authoritative official career stats and investigate discrepancies before all-time conclusions.",
+    "Cricsheet withholds some Afghanistan matches and some other events."
+  ],
+  "formats": {
+    "test": {
+      "firstOfficialYear": 1877,
+      "firstObservedYear": 1877,
+      "lastObservedYear": 2026,
+      "observedMatches": 2627,
+      "historicalScorecardMatches": 1728,
+      "deliveryMatches": 899,
+      "yearsWithZeroObservedMatches": [
+        1878,
+        1891,
+        1900,
+        1915,
+        1916,
+        1917,
+        1918,
+        1919,
+        1940,
+        1941,
+        1942,
+        1943,
+        1944,
+        1945
+      ],
+      "yearly": [
+        {
+          "year": 1877,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1878,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1879,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1880,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1881,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1882,
+          "historicalScorecardMatches": 5,
+          "deliveryMatches": 0,
+          "observedMatches": 5
+        },
+        {
+          "year": 1883,
+          "historicalScorecardMatches": 3,
+          "deliveryMatches": 0,
+          "observedMatches": 3
+        },
+        {
+          "year": 1884,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1885,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1886,
+          "historicalScorecardMatches": 3,
+          "deliveryMatches": 0,
+          "observedMatches": 3
+        },
+        {
+          "year": 1887,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1888,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1889,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1890,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1891,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1892,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1893,
+          "historicalScorecardMatches": 3,
+          "deliveryMatches": 0,
+          "observedMatches": 3
+        },
+        {
+          "year": 1894,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1895,
+          "historicalScorecardMatches": 3,
+          "deliveryMatches": 0,
+          "observedMatches": 3
+        },
+        {
+          "year": 1896,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1897,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1898,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1899,
+          "historicalScorecardMatches": 7,
+          "deliveryMatches": 0,
+          "observedMatches": 7
+        },
+        {
+          "year": 1900,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1901,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1902,
+          "historicalScorecardMatches": 12,
+          "deliveryMatches": 0,
+          "observedMatches": 12
+        },
+        {
+          "year": 1903,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1904,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1905,
+          "historicalScorecardMatches": 5,
+          "deliveryMatches": 0,
+          "observedMatches": 5
+        },
+        {
+          "year": 1906,
+          "historicalScorecardMatches": 5,
+          "deliveryMatches": 0,
+          "observedMatches": 5
+        },
+        {
+          "year": 1907,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1908,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1909,
+          "historicalScorecardMatches": 5,
+          "deliveryMatches": 0,
+          "observedMatches": 5
+        },
+        {
+          "year": 1910,
+          "historicalScorecardMatches": 7,
+          "deliveryMatches": 0,
+          "observedMatches": 7
+        },
+        {
+          "year": 1911,
+          "historicalScorecardMatches": 5,
+          "deliveryMatches": 0,
+          "observedMatches": 5
+        },
+        {
+          "year": 1912,
+          "historicalScorecardMatches": 12,
+          "deliveryMatches": 0,
+          "observedMatches": 12
+        },
+        {
+          "year": 1913,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1914,
+          "historicalScorecardMatches": 3,
+          "deliveryMatches": 0,
+          "observedMatches": 3
+        },
+        {
+          "year": 1915,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1916,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1917,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1918,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1919,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1920,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1921,
+          "historicalScorecardMatches": 11,
+          "deliveryMatches": 0,
+          "observedMatches": 11
+        },
+        {
+          "year": 1922,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1923,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1924,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1925,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 0,
+          "observedMatches": 4
+        },
+        {
+          "year": 1926,
+          "historicalScorecardMatches": 5,
+          "deliveryMatches": 0,
+          "observedMatches": 5
+        },
+        {
+          "year": 1927,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 0,
+          "observedMatches": 2
+        },
+        {
+          "year": 1928,
+          "historicalScorecardMatches": 9,
+          "deliveryMatches": 0,
+          "observedMatches": 9
+        },
+        {
+          "year": 1929,
+          "historicalScorecardMatches": 7,
+          "deliveryMatches": 0,
+          "observedMatches": 7
+        },
+        {
+          "year": 1930,
+          "historicalScorecardMatches": 15,
+          "deliveryMatches": 0,
+          "observedMatches": 15
+        },
+        {
+          "year": 1931,
+          "historicalScorecardMatches": 14,
+          "deliveryMatches": 0,
+          "observedMatches": 14
+        },
+        {
+          "year": 1932,
+          "historicalScorecardMatches": 7,
+          "deliveryMatches": 0,
+          "observedMatches": 7
+        },
+        {
+          "year": 1933,
+          "historicalScorecardMatches": 9,
+          "deliveryMatches": 0,
+          "observedMatches": 9
+        },
+        {
+          "year": 1934,
+          "historicalScorecardMatches": 7,
+          "deliveryMatches": 0,
+          "observedMatches": 7
+        },
+        {
+          "year": 1935,
+          "historicalScorecardMatches": 11,
+          "deliveryMatches": 0,
+          "observedMatches": 11
+        },
+        {
+          "year": 1936,
+          "historicalScorecardMatches": 8,
+          "deliveryMatches": 0,
+          "observedMatches": 8
+        },
+        {
+          "year": 1937,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1938,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1939,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1940,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1941,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1942,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1943,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1944,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1945,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 0,
+          "observedMatches": 0
+        },
+        {
+          "year": 1946,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1947,
+          "historicalScorecardMatches": 11,
+          "deliveryMatches": 0,
+          "observedMatches": 11
+        },
+        {
+          "year": 1948,
+          "historicalScorecardMatches": 17,
+          "deliveryMatches": 0,
+          "observedMatches": 17
+        },
+        {
+          "year": 1949,
+          "historicalScorecardMatches": 11,
+          "deliveryMatches": 0,
+          "observedMatches": 11
+        },
+        {
+          "year": 1950,
+          "historicalScorecardMatches": 9,
+          "deliveryMatches": 0,
+          "observedMatches": 9
+        },
+        {
+          "year": 1951,
+          "historicalScorecardMatches": 17,
+          "deliveryMatches": 0,
+          "observedMatches": 17
+        },
+        {
+          "year": 1952,
+          "historicalScorecardMatches": 16,
+          "deliveryMatches": 0,
+          "observedMatches": 16
+        },
+        {
+          "year": 1953,
+          "historicalScorecardMatches": 17,
+          "deliveryMatches": 0,
+          "observedMatches": 17
+        },
+        {
+          "year": 1954,
+          "historicalScorecardMatches": 15,
+          "deliveryMatches": 0,
+          "observedMatches": 15
+        },
+        {
+          "year": 1955,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 0,
+          "observedMatches": 26
+        },
+        {
+          "year": 1956,
+          "historicalScorecardMatches": 15,
+          "deliveryMatches": 0,
+          "observedMatches": 15
+        },
+        {
+          "year": 1957,
+          "historicalScorecardMatches": 11,
+          "deliveryMatches": 0,
+          "observedMatches": 11
+        },
+        {
+          "year": 1958,
+          "historicalScorecardMatches": 18,
+          "deliveryMatches": 0,
+          "observedMatches": 18
+        },
+        {
+          "year": 1959,
+          "historicalScorecardMatches": 20,
+          "deliveryMatches": 0,
+          "observedMatches": 20
+        },
+        {
+          "year": 1960,
+          "historicalScorecardMatches": 18,
+          "deliveryMatches": 0,
+          "observedMatches": 18
+        },
+        {
+          "year": 1961,
+          "historicalScorecardMatches": 17,
+          "deliveryMatches": 0,
+          "observedMatches": 17
+        },
+        {
+          "year": 1962,
+          "historicalScorecardMatches": 18,
+          "deliveryMatches": 0,
+          "observedMatches": 18
+        },
+        {
+          "year": 1963,
+          "historicalScorecardMatches": 12,
+          "deliveryMatches": 0,
+          "observedMatches": 12
+        },
+        {
+          "year": 1964,
+          "historicalScorecardMatches": 24,
+          "deliveryMatches": 0,
+          "observedMatches": 24
+        },
+        {
+          "year": 1965,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 0,
+          "observedMatches": 26
+        },
+        {
+          "year": 1966,
+          "historicalScorecardMatches": 15,
+          "deliveryMatches": 0,
+          "observedMatches": 15
+        },
+        {
+          "year": 1967,
+          "historicalScorecardMatches": 12,
+          "deliveryMatches": 0,
+          "observedMatches": 12
+        },
+        {
+          "year": 1968,
+          "historicalScorecardMatches": 18,
+          "deliveryMatches": 0,
+          "observedMatches": 18
+        },
+        {
+          "year": 1969,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 0,
+          "observedMatches": 26
+        },
+        {
+          "year": 1970,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1971,
+          "historicalScorecardMatches": 17,
+          "deliveryMatches": 0,
+          "observedMatches": 17
+        },
+        {
+          "year": 1972,
+          "historicalScorecardMatches": 14,
+          "deliveryMatches": 0,
+          "observedMatches": 14
+        },
+        {
+          "year": 1973,
+          "historicalScorecardMatches": 22,
+          "deliveryMatches": 0,
+          "observedMatches": 22
+        },
+        {
+          "year": 1974,
+          "historicalScorecardMatches": 22,
+          "deliveryMatches": 0,
+          "observedMatches": 22
+        },
+        {
+          "year": 1975,
+          "historicalScorecardMatches": 16,
+          "deliveryMatches": 0,
+          "observedMatches": 16
+        },
+        {
+          "year": 1976,
+          "historicalScorecardMatches": 23,
+          "deliveryMatches": 0,
+          "observedMatches": 23
+        },
+        {
+          "year": 1977,
+          "historicalScorecardMatches": 23,
+          "deliveryMatches": 0,
+          "observedMatches": 23
+        },
+        {
+          "year": 1978,
+          "historicalScorecardMatches": 27,
+          "deliveryMatches": 0,
+          "observedMatches": 27
+        },
+        {
+          "year": 1979,
+          "historicalScorecardMatches": 28,
+          "deliveryMatches": 0,
+          "observedMatches": 28
+        },
+        {
+          "year": 1980,
+          "historicalScorecardMatches": 25,
+          "deliveryMatches": 0,
+          "observedMatches": 25
+        },
+        {
+          "year": 1981,
+          "historicalScorecardMatches": 23,
+          "deliveryMatches": 0,
+          "observedMatches": 23
+        },
+        {
+          "year": 1982,
+          "historicalScorecardMatches": 28,
+          "deliveryMatches": 0,
+          "observedMatches": 28
+        },
+        {
+          "year": 1983,
+          "historicalScorecardMatches": 30,
+          "deliveryMatches": 0,
+          "observedMatches": 30
+        },
+        {
+          "year": 1984,
+          "historicalScorecardMatches": 34,
+          "deliveryMatches": 0,
+          "observedMatches": 34
+        },
+        {
+          "year": 1985,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 0,
+          "observedMatches": 26
+        },
+        {
+          "year": 1986,
+          "historicalScorecardMatches": 30,
+          "deliveryMatches": 0,
+          "observedMatches": 30
+        },
+        {
+          "year": 1987,
+          "historicalScorecardMatches": 25,
+          "deliveryMatches": 0,
+          "observedMatches": 25
+        },
+        {
+          "year": 1988,
+          "historicalScorecardMatches": 24,
+          "deliveryMatches": 0,
+          "observedMatches": 24
+        },
+        {
+          "year": 1989,
+          "historicalScorecardMatches": 21,
+          "deliveryMatches": 0,
+          "observedMatches": 21
+        },
+        {
+          "year": 1990,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 0,
+          "observedMatches": 26
+        },
+        {
+          "year": 1991,
+          "historicalScorecardMatches": 21,
+          "deliveryMatches": 0,
+          "observedMatches": 21
+        },
+        {
+          "year": 1992,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 0,
+          "observedMatches": 26
+        },
+        {
+          "year": 1993,
+          "historicalScorecardMatches": 36,
+          "deliveryMatches": 0,
+          "observedMatches": 36
+        },
+        {
+          "year": 1994,
+          "historicalScorecardMatches": 38,
+          "deliveryMatches": 0,
+          "observedMatches": 38
+        },
+        {
+          "year": 1995,
+          "historicalScorecardMatches": 40,
+          "deliveryMatches": 0,
+          "observedMatches": 40
+        },
+        {
+          "year": 1996,
+          "historicalScorecardMatches": 28,
+          "deliveryMatches": 0,
+          "observedMatches": 28
+        },
+        {
+          "year": 1997,
+          "historicalScorecardMatches": 44,
+          "deliveryMatches": 0,
+          "observedMatches": 44
+        },
+        {
+          "year": 1998,
+          "historicalScorecardMatches": 45,
+          "deliveryMatches": 0,
+          "observedMatches": 45
+        },
+        {
+          "year": 1999,
+          "historicalScorecardMatches": 43,
+          "deliveryMatches": 0,
+          "observedMatches": 43
+        },
+        {
+          "year": 2000,
+          "historicalScorecardMatches": 46,
+          "deliveryMatches": 0,
+          "observedMatches": 46
+        },
+        {
+          "year": 2001,
+          "historicalScorecardMatches": 54,
+          "deliveryMatches": 1,
+          "observedMatches": 55
+        },
+        {
+          "year": 2002,
+          "historicalScorecardMatches": 52,
+          "deliveryMatches": 2,
+          "observedMatches": 54
+        },
+        {
+          "year": 2003,
+          "historicalScorecardMatches": 24,
+          "deliveryMatches": 20,
+          "observedMatches": 44
+        },
+        {
+          "year": 2004,
+          "historicalScorecardMatches": 34,
+          "deliveryMatches": 17,
+          "observedMatches": 51
+        },
+        {
+          "year": 2005,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 24,
+          "observedMatches": 50
+        },
+        {
+          "year": 2006,
+          "historicalScorecardMatches": 7,
+          "deliveryMatches": 39,
+          "observedMatches": 46
+        },
+        {
+          "year": 2007,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 30,
+          "observedMatches": 31
+        },
+        {
+          "year": 2008,
+          "historicalScorecardMatches": 4,
+          "deliveryMatches": 43,
+          "observedMatches": 47
+        },
+        {
+          "year": 2009,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 41,
+          "observedMatches": 41
+        },
+        {
+          "year": 2010,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 43,
+          "observedMatches": 43
+        },
+        {
+          "year": 2011,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 39,
+          "observedMatches": 39
+        },
+        {
+          "year": 2012,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 42,
+          "observedMatches": 42
+        },
+        {
+          "year": 2013,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 44,
+          "observedMatches": 44
+        },
+        {
+          "year": 2014,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 41,
+          "observedMatches": 41
+        },
+        {
+          "year": 2015,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 43,
+          "observedMatches": 43
+        },
+        {
+          "year": 2016,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 47,
+          "observedMatches": 47
+        },
+        {
+          "year": 2017,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 47,
+          "observedMatches": 47
+        },
+        {
+          "year": 2018,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 47,
+          "observedMatches": 47
+        },
+        {
+          "year": 2019,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 36,
+          "observedMatches": 36
+        },
+        {
+          "year": 2020,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 22,
+          "observedMatches": 22
+        },
+        {
+          "year": 2021,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 42,
+          "observedMatches": 42
+        },
+        {
+          "year": 2022,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 43,
+          "observedMatches": 43
+        },
+        {
+          "year": 2023,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 33,
+          "observedMatches": 33
+        },
+        {
+          "year": 2024,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 50,
+          "observedMatches": 50
+        },
+        {
+          "year": 2025,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 40,
+          "observedMatches": 40
+        },
+        {
+          "year": 2026,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 23,
+          "observedMatches": 23
+        }
+      ],
+      "officialMatchesCoveredPercent": null
+    },
+    "odi": {
+      "firstOfficialYear": 1971,
+      "firstObservedYear": 1971,
+      "lastObservedYear": 2026,
+      "observedMatches": 5092,
+      "historicalScorecardMatches": 2475,
+      "deliveryMatches": 2617,
+      "yearsWithZeroObservedMatches": [],
+      "yearly": [
+        {
+          "year": 1971,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 0,
+          "observedMatches": 1
+        },
+        {
+          "year": 1972,
+          "historicalScorecardMatches": 3,
+          "deliveryMatches": 0,
+          "observedMatches": 3
+        },
+        {
+          "year": 1973,
+          "historicalScorecardMatches": 5,
+          "deliveryMatches": 0,
+          "observedMatches": 5
+        },
+        {
+          "year": 1974,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1975,
+          "historicalScorecardMatches": 22,
+          "deliveryMatches": 0,
+          "observedMatches": 22
+        },
+        {
+          "year": 1976,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1977,
+          "historicalScorecardMatches": 6,
+          "deliveryMatches": 0,
+          "observedMatches": 6
+        },
+        {
+          "year": 1978,
+          "historicalScorecardMatches": 10,
+          "deliveryMatches": 0,
+          "observedMatches": 10
+        },
+        {
+          "year": 1979,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 0,
+          "observedMatches": 26
+        },
+        {
+          "year": 1980,
+          "historicalScorecardMatches": 21,
+          "deliveryMatches": 0,
+          "observedMatches": 21
+        },
+        {
+          "year": 1981,
+          "historicalScorecardMatches": 28,
+          "deliveryMatches": 0,
+          "observedMatches": 28
+        },
+        {
+          "year": 1982,
+          "historicalScorecardMatches": 33,
+          "deliveryMatches": 0,
+          "observedMatches": 33
+        },
+        {
+          "year": 1983,
+          "historicalScorecardMatches": 66,
+          "deliveryMatches": 0,
+          "observedMatches": 66
+        },
+        {
+          "year": 1984,
+          "historicalScorecardMatches": 51,
+          "deliveryMatches": 0,
+          "observedMatches": 51
+        },
+        {
+          "year": 1985,
+          "historicalScorecardMatches": 65,
+          "deliveryMatches": 0,
+          "observedMatches": 65
+        },
+        {
+          "year": 1986,
+          "historicalScorecardMatches": 62,
+          "deliveryMatches": 0,
+          "observedMatches": 62
+        },
+        {
+          "year": 1987,
+          "historicalScorecardMatches": 74,
+          "deliveryMatches": 0,
+          "observedMatches": 74
+        },
+        {
+          "year": 1988,
+          "historicalScorecardMatches": 61,
+          "deliveryMatches": 0,
+          "observedMatches": 61
+        },
+        {
+          "year": 1989,
+          "historicalScorecardMatches": 55,
+          "deliveryMatches": 0,
+          "observedMatches": 55
+        },
+        {
+          "year": 1990,
+          "historicalScorecardMatches": 61,
+          "deliveryMatches": 0,
+          "observedMatches": 61
+        },
+        {
+          "year": 1991,
+          "historicalScorecardMatches": 39,
+          "deliveryMatches": 0,
+          "observedMatches": 39
+        },
+        {
+          "year": 1992,
+          "historicalScorecardMatches": 89,
+          "deliveryMatches": 0,
+          "observedMatches": 89
+        },
+        {
+          "year": 1993,
+          "historicalScorecardMatches": 82,
+          "deliveryMatches": 0,
+          "observedMatches": 82
+        },
+        {
+          "year": 1994,
+          "historicalScorecardMatches": 100,
+          "deliveryMatches": 0,
+          "observedMatches": 100
+        },
+        {
+          "year": 1995,
+          "historicalScorecardMatches": 60,
+          "deliveryMatches": 0,
+          "observedMatches": 60
+        },
+        {
+          "year": 1996,
+          "historicalScorecardMatches": 136,
+          "deliveryMatches": 0,
+          "observedMatches": 136
+        },
+        {
+          "year": 1997,
+          "historicalScorecardMatches": 115,
+          "deliveryMatches": 0,
+          "observedMatches": 115
+        },
+        {
+          "year": 1998,
+          "historicalScorecardMatches": 108,
+          "deliveryMatches": 0,
+          "observedMatches": 108
+        },
+        {
+          "year": 1999,
+          "historicalScorecardMatches": 154,
+          "deliveryMatches": 0,
+          "observedMatches": 154
+        },
+        {
+          "year": 2000,
+          "historicalScorecardMatches": 131,
+          "deliveryMatches": 0,
+          "observedMatches": 131
+        },
+        {
+          "year": 2001,
+          "historicalScorecardMatches": 120,
+          "deliveryMatches": 0,
+          "observedMatches": 120
+        },
+        {
+          "year": 2002,
+          "historicalScorecardMatches": 144,
+          "deliveryMatches": 3,
+          "observedMatches": 147
+        },
+        {
+          "year": 2003,
+          "historicalScorecardMatches": 34,
+          "deliveryMatches": 119,
+          "observedMatches": 153
+        },
+        {
+          "year": 2004,
+          "historicalScorecardMatches": 54,
+          "deliveryMatches": 79,
+          "observedMatches": 133
+        },
+        {
+          "year": 2005,
+          "historicalScorecardMatches": 49,
+          "deliveryMatches": 67,
+          "observedMatches": 116
+        },
+        {
+          "year": 2006,
+          "historicalScorecardMatches": 60,
+          "deliveryMatches": 119,
+          "observedMatches": 179
+        },
+        {
+          "year": 2007,
+          "historicalScorecardMatches": 71,
+          "deliveryMatches": 151,
+          "observedMatches": 222
+        },
+        {
+          "year": 2008,
+          "historicalScorecardMatches": 38,
+          "deliveryMatches": 99,
+          "observedMatches": 137
+        },
+        {
+          "year": 2009,
+          "historicalScorecardMatches": 41,
+          "deliveryMatches": 116,
+          "observedMatches": 157
+        },
+        {
+          "year": 2010,
+          "historicalScorecardMatches": 49,
+          "deliveryMatches": 105,
+          "observedMatches": 154
+        },
+        {
+          "year": 2011,
+          "historicalScorecardMatches": 19,
+          "deliveryMatches": 137,
+          "observedMatches": 156
+        },
+        {
+          "year": 2012,
+          "historicalScorecardMatches": 8,
+          "deliveryMatches": 84,
+          "observedMatches": 92
+        },
+        {
+          "year": 2013,
+          "historicalScorecardMatches": 17,
+          "deliveryMatches": 124,
+          "observedMatches": 141
+        },
+        {
+          "year": 2014,
+          "historicalScorecardMatches": 28,
+          "deliveryMatches": 104,
+          "observedMatches": 132
+        },
+        {
+          "year": 2015,
+          "historicalScorecardMatches": 26,
+          "deliveryMatches": 127,
+          "observedMatches": 153
+        },
+        {
+          "year": 2016,
+          "historicalScorecardMatches": 19,
+          "deliveryMatches": 85,
+          "observedMatches": 104
+        },
+        {
+          "year": 2017,
+          "historicalScorecardMatches": 22,
+          "deliveryMatches": 107,
+          "observedMatches": 129
+        },
+        {
+          "year": 2018,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 105,
+          "observedMatches": 105
+        },
+        {
+          "year": 2019,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 127,
+          "observedMatches": 127
+        },
+        {
+          "year": 2020,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 44,
+          "observedMatches": 44
+        },
+        {
+          "year": 2021,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 65,
+          "observedMatches": 65
+        },
+        {
+          "year": 2022,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 148,
+          "observedMatches": 148
+        },
+        {
+          "year": 2023,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 195,
+          "observedMatches": 195
+        },
+        {
+          "year": 2024,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 89,
+          "observedMatches": 89
+        },
+        {
+          "year": 2025,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 108,
+          "observedMatches": 108
+        },
+        {
+          "year": 2026,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 110,
+          "observedMatches": 110
+        }
+      ],
+      "officialMatchesCoveredPercent": null
+    },
+    "t20i": {
+      "firstOfficialYear": 2005,
+      "firstObservedYear": 2005,
+      "lastObservedYear": 2026,
+      "observedMatches": 3817,
+      "historicalScorecardMatches": 168,
+      "deliveryMatches": 3649,
+      "yearsWithZeroObservedMatches": [],
+      "yearly": [
+        {
+          "year": 2005,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 3,
+          "observedMatches": 3
+        },
+        {
+          "year": 2006,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 8,
+          "observedMatches": 9
+        },
+        {
+          "year": 2007,
+          "historicalScorecardMatches": 1,
+          "deliveryMatches": 36,
+          "observedMatches": 37
+        },
+        {
+          "year": 2008,
+          "historicalScorecardMatches": 19,
+          "deliveryMatches": 15,
+          "observedMatches": 34
+        },
+        {
+          "year": 2009,
+          "historicalScorecardMatches": 2,
+          "deliveryMatches": 48,
+          "observedMatches": 50
+        },
+        {
+          "year": 2010,
+          "historicalScorecardMatches": 16,
+          "deliveryMatches": 56,
+          "observedMatches": 72
+        },
+        {
+          "year": 2011,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 21,
+          "observedMatches": 21
+        },
+        {
+          "year": 2012,
+          "historicalScorecardMatches": 16,
+          "deliveryMatches": 72,
+          "observedMatches": 88
+        },
+        {
+          "year": 2013,
+          "historicalScorecardMatches": 17,
+          "deliveryMatches": 42,
+          "observedMatches": 59
+        },
+        {
+          "year": 2014,
+          "historicalScorecardMatches": 12,
+          "deliveryMatches": 58,
+          "observedMatches": 70
+        },
+        {
+          "year": 2015,
+          "historicalScorecardMatches": 28,
+          "deliveryMatches": 45,
+          "observedMatches": 73
+        },
+        {
+          "year": 2016,
+          "historicalScorecardMatches": 37,
+          "deliveryMatches": 82,
+          "observedMatches": 119
+        },
+        {
+          "year": 2017,
+          "historicalScorecardMatches": 19,
+          "deliveryMatches": 53,
+          "observedMatches": 72
+        },
+        {
+          "year": 2018,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 74,
+          "observedMatches": 74
+        },
+        {
+          "year": 2019,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 206,
+          "observedMatches": 206
+        },
+        {
+          "year": 2020,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 72,
+          "observedMatches": 72
+        },
+        {
+          "year": 2021,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 289,
+          "observedMatches": 289
+        },
+        {
+          "year": 2022,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 444,
+          "observedMatches": 444
+        },
+        {
+          "year": 2023,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 345,
+          "observedMatches": 345
+        },
+        {
+          "year": 2024,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 611,
+          "observedMatches": 611
+        },
+        {
+          "year": 2025,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 531,
+          "observedMatches": 531
+        },
+        {
+          "year": 2026,
+          "historicalScorecardMatches": 0,
+          "deliveryMatches": 538,
+          "observedMatches": 538
+        }
+      ],
+      "officialMatchesCoveredPercent": null
+    }
+  }
+}
