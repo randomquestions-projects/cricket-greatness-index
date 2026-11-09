@@ -3,11 +3,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '20 6 * * 1'
-  push:
-    branches: [main]
-    paths:
-      - 'warehouse/**'
-      - '.github/workflows/warehouse-references.yml'
 permissions:
   contents: write
 jobs:
