@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.DS_Store
+# Only derived research output belongs in the repository; no source ZIP archives.
+data/raw/*
+!data/raw/.gitkeep
+data/generated/
+# Optional licensed historical scorecards may have redistribution restrictions.
+data/historical/innings.csv
