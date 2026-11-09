@@ -6,6 +6,8 @@ on:
       - '.github/workflows/refresh-data.yml'
       - 'tests/test_historical.py'
       - 'tests/test_test_greatness.py'
+      - 'pipeline/model.py'
+      - 'pipeline/test_greatness.py'
   workflow_dispatch:
   schedule:
     - cron: '35 5 * * 1'
