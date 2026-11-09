@@ -1,6 +1,6 @@
 # Cricket Greatness Lab · independent source coverage audit
 
-Generated on **2026-11-09T21:42:35+00:00**.
+Generated on **2026-11-09T23:18:17+00:00**.
 
 **7,165** source delivery matches; **4,371** extra historical scorecard matches.
 
