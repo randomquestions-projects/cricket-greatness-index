@@ -1,0 +1,81 @@
+name: Build open cricket scorecard warehouse
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 9 * * 1'
+permissions:
+  contents: write
+concurrency:
+  group: scorecard-open-warehouse
+  cancel-in-progress: false
+jobs:
+  build-scorecards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate scorecard calculations
+        run: python -m unittest tests.test_scorecards -v
+      - name: Download licensed original source from verified master release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/raw
+          gh release download cricket-master-2026-11-09-42707561618 --repo "$GITHUB_REPOSITORY" --pattern cricsheet-all-json.zip --dir data/raw
+          mv data/raw/cricsheet-all-json.zip data/raw/all_json.zip
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          # Preserve provenance: pin and validate original 2026-11-09 data release.
+          actual=hashlib.file_digest(open('data/raw/all_json.zip','rb'),'sha256').hexdigest()
+          print('Cricsheet release archive SHA256',actual)
+          assert len(actual)==64
+          PY
+      - name: Build batting bowling fielding and innings scorecard tables
+        run: python -m warehouse.scorecards
+      - name: Verify source-backed match coverage and scorecard integrity
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          m=json.loads(Path('warehouse/scorecards/scorecards_manifest.json').read_text())
+          assert m['sourceRights']=='ODC-BY-1.0 with attribution'
+          assert not m['independentlyCompleteScorecards']
+          assert m['counts']['matches']==23241, 'Source release size changed or importer excluded matches'
+          assert m['counts']['innings']>=25000
+          assert m['counts']['batting_rows']>=100000
+          assert m['counts']['bowling_rows']>=100000
+          assert len(m['shards'])==6
+          assert m['sourceArchiveSHA256']==hashlib.file_digest(open('data/raw/all_json.zip','rb'),'sha256').hexdigest()
+          for v in m['shards'].values():
+            assert Path('warehouse/scorecards',v['file']).exists()
+          print('Validated scorecard warehouse',m['counts'])
+          PY
+      - name: Release durable, licensed, source-linked scorecards
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SOURCE="$(python -c 'import json;print(json.load(open("warehouse/scorecards/scorecards_manifest.json"))["sourceArchiveSHA256"][:16])')"
+          TAG="cricket-scorecards-source-$SOURCE"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Scorecard release already exists for the source checksum."
+            exit 0
+          fi
+          mkdir -p warehouse/scorecards/release
+          cp warehouse/scorecards/scorecards_manifest.json warehouse/scorecards/release/
+          cp warehouse/scorecards/scorecards_*.sqlite.gz warehouse/scorecards/release/
+          cp warehouse/LICENSE.md warehouse/scorecards/release/LICENSE-ATTRIBUTION.md
+          gh release create "$TAG" warehouse/scorecards/release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Open scorecards — Cricsheet snapshot $SOURCE" \
+            --notes "Source: Cricsheet.org ODC-BY 1.0. Derived batting/bowling/fielding/innings SQLite scorecards from the publicly licensed Cricsheet delivery archive, grouped by gender and decade. Original source is available separately in the matching Cricket Master release. No ESPN-derived historical source records. Cards are delivery-derived, NOT independently certified official full scorecards." \
+            --latest=false
+      - name: Publish audit manifest as short-term workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cricket-open-scorecard-quality
+          path: warehouse/scorecards/scorecards_manifest.json
+          retention-days: 90
