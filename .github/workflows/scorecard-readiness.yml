@@ -1,0 +1,57 @@
+name: Produce unified public scorecard coverage report
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/scorecard-readiness.yml'
+permissions:
+  contents: write
+jobs:
+  publication-safe-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test rights-safe report and cross-source match consistency
+        run: python -m unittest tests.test_readiness -v
+      - name: Obtain released licensed scorecard metadata (not source rows)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p warehouse/scorecards
+          gh release download cricket-scorecards-source-13f9f5d5153c3625 \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern scorecards_manifest.json \
+            --dir warehouse/scorecards
+      - name: Reconcile published historical and open-source coverage counts
+        run: python -m warehouse.readiness
+      - name: Confirm no claim of historical completeness or source permission
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("warehouse/audits/scorecard_readiness.json")
+          r=json.loads(p.read_text())
+          assert r['publishedRawHistoricalRows'] is False
+          assert r['independentOfficialCensusComplete'] is False
+          assert r['independentScorecardComparisonComplete'] is False
+          assert r['allTimeRankingsCertified'] is False
+          assert r['formatCoverage']['test']['currentObservedMatches']>=2600
+          assert r['formatCoverage']['odi']['currentObservedMatches']>=5000
+          assert r['openScorecardWarehouseMatches']==23241
+          print('Audit passed:',{f:d['currentObservedMatches'] for f,d in r['formatCoverage'].items()})
+          PY
+      - name: Commit only aggregate open/restricted coverage tier metadata
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add warehouse/audits/scorecard_readiness.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Warehouse: audit scorecard completeness and source provenance"
+            git pull --rebase origin main
+            git push
+          fi
