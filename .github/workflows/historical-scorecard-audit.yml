@@ -1,0 +1,55 @@
+name: Audit historical scorecard completeness (aggregate-only)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/historical-scorecard-audit.yml'
+permissions:
+  contents: write
+concurrency:
+  group: historical-scorecard-completeness
+  cancel-in-progress: false
+jobs:
+  audit-restricted-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source audit and redaction
+        run: python -m unittest tests.test_historical_coverage -v
+      - name: Download existing research-only 2017 source snapshot without public redistribution
+        run: python -m pipeline.historical --download
+      - name: Audit field-level scorecard missingness (no individual row publication)
+        run: python -m warehouse.historical_audit
+      - name: Verify only anonymous aggregate statistics are published
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('warehouse/audits/historical_scorecard_fields.json')
+          r=json.loads(p.read_text())
+          assert not r['individualHistoricalSourceRowsPublished']
+          assert not r['scorecardCompletenessCertified']
+          assert not r['officialMatchCensusCertified']
+          assert r['rightsStatus'].startswith('UNVERIFIED')
+          assert r['formats']['test']['sourceCandidateMatches']>=1500
+          assert r['formats']['odi']['sourceCandidateMatches']>=2000
+          assert r['formats']['test']['missingnessRowCounts']['missing_batting_order']>0
+          assert r['formats']['odi']['missingnessRowCounts']['no_bowler_exposures']>0
+          assert all('battingRuns' in v['fields'] for v in r['formats'].values())
+          print('Aggregate audit passed; historical raw scorecard data NOT published.')
+          PY
+      - name: Commit the aggregate-only research quality report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add warehouse/audits/historical_scorecard_fields.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Data quality: historical field availability (aggregates only)"
+            git pull --rebase origin main
+            git push
+          fi
