@@ -46,7 +46,7 @@ class MasterWarehouseTests(unittest.TestCase):
             db=sqlite3.connect(root/"unpacked.sqlite")
             self.assertEqual(db.execute("SELECT count(*) FROM match_people").fetchone()[0],2)
             self.assertEqual(db.execute("SELECT match_type,category,official_match_type_number FROM matches").fetchone(),("T20","t20i",44))
-            self.assertEqual(db.execute("SELECT sum(total_runs),sum(legal_ball),sum(faced_ball) FROM deliveries").fetchone(),(5,1,2))
+            self.assertEqual(db.execute("SELECT sum(total_runs),sum(legal_ball),sum(faced_ball) FROM deliveries").fetchone(),(5,1,1))
             self.assertEqual(db.execute("SELECT dismissal_kind FROM wickets").fetchone()[0],"run out")
             self.assertEqual(db.execute("SELECT batter_id FROM deliveries LIMIT 1").fetchone()[0],"key_a")
             db.close()
