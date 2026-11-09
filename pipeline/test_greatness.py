@@ -282,10 +282,11 @@ def build_from_rows(source_rows, bootstraps=True):
         year_first=min(r["date"] for r in rs);year_last=max(r["date"] for r in rs)
         # Same model and features for history and modern. Diagnostics below
         # expose reliability; modern-only data never gives bonus points.
-        by_opp=defaultdict(list);by_host=defaultdict(list)
+        by_opp=defaultdict(list);by_host=defaultdict(list);by_road_opponent=defaultdict(list)
         for r in rs:
             by_opp[r["opposition"]].append(r)
             by_host[r["venueClass"]].append(r)
+            by_road_opponent[(r["opposition"],r["venueClass"])].append(r)
         opponent_splits=[{"opponent":opp,"innings":len(a),"runs":int(sum(x["runs"] for x in a)),
                           "average":round(sum(x["runs"] for x in a)/sum(x["dismissed"] for x in a),2)
                           if sum(x["dismissed"] for x in a) else None,
@@ -297,6 +298,18 @@ def build_from_rows(source_rows, bootstraps=True):
                        "quality":round(_rating(sum(x["runs"] for x in a),sum(x["expectedRuns"] for x in a),
                            sum(x["dismissed"] for x in a),sum(x["expectedOuts"] for x in a),len(a)),1)}
                       for h,a in by_host.items() if len(a)>=5]
+        road_opponent_splits=[
+            {"opponent":opp,"venueClass":venue,"innings":len(a),
+             "runs":int(sum(x["runs"] for x in a)),
+             "average":round(sum(x["runs"] for x in a)/sum(x["dismissed"] for x in a),2)
+                    if sum(x["dismissed"] for x in a) else None,
+             "quality":round(_rating(sum(x["runs"] for x in a),
+                       sum(x["expectedRuns"] for x in a),
+                       sum(x["dismissed"] for x in a),
+                       sum(x["expectedOuts"] for x in a),len(a)),1)}
+            for (opp,venue),a in by_road_opponent.items()
+            if venue in ("away","home","neutral") and len(a)>=5]
+        road_opponent_splits.sort(key=lambda x:(x["venueClass"]!="away",-x["innings"]))
         sens={}
         for label,drop in (("withoutOpposition","opponentFactor"),
                            ("withoutVenue","venueFactor"),
@@ -310,6 +323,7 @@ def build_from_rows(source_rows, bootstraps=True):
             "teamCarryInterval90":_bootstrap(rs,"carry",SEED+len(pid)*11) if bootstraps else None,
             "opponents":opponent_splits,
             "venues":venue_splits,
+            "opponentAndVenue":road_opponent_splits,
             "sensitivity":sens})
         official=KNOWN_CAREERS.get(name)
         if official:
