@@ -1,8 +1,6 @@
-name: Build reusable international cricket event warehouse
+name: Legacy men's international events export (manual only)
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '45 7 * * 1'
 permissions:
   contents: write
 jobs:
