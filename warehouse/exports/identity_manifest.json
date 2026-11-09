@@ -1,0 +1,22 @@
+{
+  "asOfUTC": "2026-11-09T21:37:35+00:00",
+  "source": "Cricsheet.org",
+  "url": "https://cricsheet.org/register/",
+  "license": "ODC-BY 1.0",
+  "sourceSHA256": {
+    "people.csv": "3926fec53340ed8539ba98b420f907ab5e8aced21e8a61138d313adc1ed8a42b",
+    "names.csv": "cde5292c15be1cf03e0b366875b5aa2e23c29283ca9d368bb0f768ea85761fb1",
+    "venues.csv": "e0d4ec19b3789c16d99a24ec743ab7e4a1f839bb7f62a7c9678a13e30de8066e",
+    "venue_names.csv": "01e3b9d059f86ba6ee086cdb08d612b96a45f301912e3302e2edb6f79fa11cfd"
+  },
+  "tableCounts": {
+    "people": 18698,
+    "person_aliases": 7551,
+    "person_external_ids": 28603,
+    "venues": 591,
+    "venue_aliases": 297,
+    "venue_external_ids": 592
+  },
+  "outputSHA256": "9414a49487b3e63af8f8f8a7df116c971e5e9e822a5c47517689976defd1c487",
+  "note": "IDs and aliases are REFERENCES; do not merge ambiguous historic people on name alone."
+}
