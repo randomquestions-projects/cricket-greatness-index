@@ -52,6 +52,5 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m 'Data warehouse: record updated delivery archive coverage'
             git pull --rebase origin main
-            git pull --rebase origin main
-          git push
+            git push
           fi
