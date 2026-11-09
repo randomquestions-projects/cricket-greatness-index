@@ -91,45 +91,53 @@ def _year_reference(yr,pid,annual,by_player):
             return ((total[0]+6)/(total[2]+0.15),min(.99,max(.45,(total[1]+2)/(total[2]+2))),total[2])
     return 35.,.84,0.
 
-def _opp_factor(r,by_year_opp,by_match_opp,annual,opponent_weight=1.):
-    """Shrink opposition bowling proxy based on OTHER batting results.
+def _opp_factor(r,by_year_opp,by_year_opp_player,by_match_opp,annual,by_player,by_match,opponent_weight=1.):
+    """Opposition-team concession proxy, leave-*player* and leave-*match* out.
 
-    Opponent mean runs per *batter innings* (not individual bowlers).
-    Excludes ALL observations from target match to prevent own-match circularity.
-    Still confounded by which batting nations the opposition faced; displayed
-    strictly as a team-level proxy and sensitivity-tested.
+    Uses other batters' scoring AGAINST the opponent nation in nearby years.
+    Removes all target player's performances, plus all remaining observations
+    from the evaluated Test, to avoid rating an attack as weaker just because
+    this extraordinary batter made runs against it. Opponent mix remains a
+    major confounder; this is not individual opposition bowler quality.
     """
-    yr=r["year"];opp=r["opposition"];match=r["match_id"]
-    runs=outs=n=0.
-    base_runs=base_n=0.
+    yr=r["year"];opp=r["opposition"];match=r["match_id"];pid=r["player_id"]
+    runs=n=base_runs=base_n=0.
     for y in range(yr-OPP_WINDOW,yr+OPP_WINDOW+1):
         w=1/(1+abs(y-yr))
         a=by_year_opp.get((y,opp),(0,0,0))
+        ap=by_year_opp_player.get((y,opp,pid),(0,0,0))
         b=annual.get(y,(0,0,0))
-        runs+=a[0]*w;n+=a[2]*w
-        base_runs+=b[0]*w;base_n+=b[2]*w
-    own_match=by_match_opp.get((match,opp),(0,0,0))
-    runs-=own_match[0];n-=own_match[2]
-    base_runs-=own_match[0];base_n-=own_match[2]
+        bp=by_player.get((y,pid),(0,0,0))
+        runs+=(a[0]-ap[0])*w;n+=(a[2]-ap[2])*w
+        base_runs+=(b[0]-bp[0])*w;base_n+=(b[2]-bp[2])*w
+    own=r["matchPlayer"]
+    same_opp=by_match_opp.get((match,opp),(0,0,0))
+    same_all=by_match.get(match,(0,0,0))
+    # Own match was included at weight 1 for the same year; subtract only
+    # OTHER players because the rated player's entries were already removed.
+    runs-=max(0.,same_opp[0]-own[0]);n-=max(0.,same_opp[2]-own[2])
+    base_runs-=max(0.,same_all[0]-own[0]);base_n-=max(0.,same_all[2]-own[2])
     if n<12 or base_n<50:return 1.,0.
     mean=(runs+30*25)/(n+25)
     base=(base_runs+30*25)/(base_n+25)
-    # If opponent historically conceded fewer runs per innings than peers,
-    # batting against them is rated more difficult (lower expected runs).
     log_effect=math.log(max(8,mean)/max(8,base))
     confidence=min(1.,n/(n+110))
     log_effect=max(-.22,min(.22,log_effect*confidence*.7*opponent_weight))
     return math.exp(log_effect),round(confidence,3)
 
-def _venue_factor(r,annual,by_venue,weight=1.):
+def _venue_factor(r,annual,by_venue,by_player,by_venue_player,weight=1.):
+    """Era-relative scoring on away or home grounds, leave-rated-batter-out."""
     kind=r["venueClass"]
     if kind not in ("home","away"):return 1.,0.
-    yr=r["year"];r_sum=n=total=n_total=0.
+    yr=r["year"];pid=r["player_id"];r_sum=n=total=n_total=0.
     for y in range(yr-7,yr+8):
         w=1/(1+abs(y-yr))
         a=by_venue.get((y,kind),(0,0,0))
+        ap=by_venue_player.get((y,kind,pid),(0,0,0))
         b=annual.get(y,(0,0,0))
-        r_sum+=a[0]*w;n+=a[2]*w;total+=b[0]*w;n_total+=b[2]*w
+        bp=by_player.get((y,pid),(0,0,0))
+        r_sum+=(a[0]-ap[0])*w;n+=(a[2]-ap[2])*w
+        total+=(b[0]-bp[0])*w;n_total+=(b[2]-bp[2])*w
     if n<35 or n_total<100:return 1.,0.
     mean=(r_sum+30*40)/(n+40)
     base=(total+30*40)/(n_total+40)
@@ -223,17 +231,21 @@ def build_from_rows(source_rows, bootstraps=True):
     annual=defaultdict(lambda:[0.,0.,0.])
     by_player=defaultdict(lambda:[0.,0.,0.])
     by_year_opp=defaultdict(lambda:[0.,0.,0.])
+    by_year_opp_player=defaultdict(lambda:[0.,0.,0.])
     by_match_opp=defaultdict(lambda:[0.,0.,0.])
     by_match=defaultdict(lambda:[0.,0.,0.])
     by_venue=defaultdict(lambda:[0.,0.,0.])
+    by_venue_player=defaultdict(lambda:[0.,0.,0.])
     match_players=defaultdict(lambda:[0.,0.,0.])
     innings=defaultdict(list);player_rows=defaultdict(list)
     for r in tests:
         triple=(r["runs"],r["dismissed"],1)
         for dest in (annual[r["year"]],by_player[(r["year"],r["player_id"])],
                      by_year_opp[(r["year"],r["opposition"])],
+                     by_year_opp_player[(r["year"],r["opposition"],r["player_id"])],
                      by_match_opp[(r["match_id"],r["opposition"])],
                      by_match[r["match_id"]],by_venue[(r["year"],r["venueClass"])],
+                     by_venue_player[(r["year"],r["venueClass"],r["player_id"])],
                      match_players[(r["match_id"],r["player_id"])]):
             for j in range(3):dest[j]+=triple[j]
         innings[r["innings_id"]].append(r)
@@ -241,8 +253,8 @@ def build_from_rows(source_rows, bootstraps=True):
     for r in tests:
         r["matchPlayer"]=match_players[(r["match_id"],r["player_id"])]
         base_rpi,base_d,base_n=_year_reference(r["year"],r["player_id"],annual,by_player)
-        opp,oe=_opp_factor(r,by_year_opp,by_match_opp,annual)
-        venue,ve=_venue_factor(r,annual,by_venue)
+        opp,oe=_opp_factor(r,by_year_opp,by_year_opp_player,by_match_opp,annual,by_player,by_match)
+        venue,ve=_venue_factor(r,annual,by_venue,by_player,by_venue_player)
         match,me=_match_factor(r,by_match,base_rpi)
         r["baseExpected"]=base_rpi
         r["opponentFactor"]=opp
@@ -335,7 +347,7 @@ def build_from_rows(source_rows, bootstraps=True):
            "careerGreatness":"Quality premium with sample size + cumulative contextual runs above expected; researcher-defined, not trained",
            "peak":"Best rolling 25-Test-innings same-scorecard quality, no sample-size shrinkage; selection bias acknowledged",
            "era":"Leave-batter-out nearby-year reference (2–30-year adaptive windows)",
-           "opposition":"Other batters' runs per appearance vs opponent in ±5 years, excluding entire evaluated match; shrunken proxy, not individual bowler strength",
+           "opposition":"Other batters' runs per appearance vs opponent in ±5 years, excluding rated batter's entire career and evaluated match; shrunken proxy, not individual bowler strength",
            "homeAway":"Observed home/away scoring factor by nearby-year peers; unknown venues unadjusted",
            "conditions":"Other batters' scoring within the same Test excluding the evaluated batter's all innings; proxy, not measured pitch",
            "uncertainty":"90% conditional match-cluster bootstrap, fixed fitted baselines; excludes source missingness and historical structural uncertainty",
