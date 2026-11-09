@@ -38,6 +38,7 @@ class TestEraModel(unittest.TestCase):
         self.assertGreater(names["Don Bradman"]["quality"],100)
         self.assertGreater(names["Virat Kohli"]["quality"],100)
         self.assertEqual(names["Don Bradman"]["innings"],40)
+        self.assertTrue(any(x["opponent"]=="England" and x["venueClass"]=="away" for x in names["Don Bradman"]["opponentAndVenue"]))
         self.assertEqual(names["Virat Kohli"]["innings"],40)
         self.assertIsNone(names["Virat Kohli"]["qualityInterval90"])
         self.assertTrue(any(p.get("careerCheck") for p in result["players"]))
