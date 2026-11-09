@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Cricket Greatness Lab · Independent batting research</title>
+<meta name="description" content="A reproducible, scorecard-level international cricket batting analysis. ODI, Test, T20I, teammate-adjusted, era-aware and transparent about coverage."/>
+<link rel="stylesheet" href="assets/styles.css"/>
+</head><body>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="identity"><div class="logo">CG<span>·</span></div><div><strong>Cricket<br>Greatness Lab</strong><small>AN INDEPENDENT ANALYTICS PROJECT</small></div></div>
+  <div class="sidebar-section">ANALYSIS</div>
+  <nav id="navigation" aria-label="Site navigation">
+    <button data-page="overview"><span>◈</span> Overview</button>
+    <button data-page="odi"><span>◐</span> One-Day Internationals</button>
+    <button data-page="test"><span>▤</span> Test Cricket</button>
+    <button data-page="t20i"><span>◕</span> T20 Internationals</button>
+    <button data-page="test_odi"><span>◇</span> Tests + ODIs</button>
+    <button data-page="all_three"><span>◆</span> All three formats</button>
+    <button data-page="compare"><span>⇄</span> Batter comparison</button>
+    <button data-page="matches"><span>☷</span> Match explorer</button>
+  </nav>
+  <div class="sidebar-section">RESEARCH</div>
+  <nav id="secondary-nav"><button data-page="methodology"><span>∑</span> Index methodology</button><button data-page="coverage"><span>▧</span> Data & coverage</button></nav>
+  <div class="sidebar-foot"><span class="live-dot"></span><span id="side-status">Checking verified data…</span><a href="https://cricsheet.org/downloads/" target="_blank" rel="noreferrer">Cricsheet data (ODC-BY) ↗</a></div>
+</aside>
+<div class="main-shell">
+<header class="topbar"><button id="menu-button" class="mobile-menu" aria-label="Toggle menu">☰</button><div class="breadcrumbs">RESEARCH / <span id="breadcrumb">OVERVIEW</span></div><div class="top-right"><span class="pill" id="header-status">SOURCE-AUDITED</span><span class="avatar">CG</span></div></header>
+<main id="main-content" tabindex="-1" aria-live="polite">
+<section class="hero"><div class="eyebrow">THE SEARCH FOR CRICKET'S GREATEST BATTER <span class="dash">/</span> 1877 → PRESENT</div><h1 id="page-heading">Who was <em>truly</em> the greatest?</h1><p id="page-description">Beyond runs and averages: compare batters against their own era, the bowlers they faced, the conditions they played in, and the teammates beside them.</p></section>
+<div class="notice" id="data-notice"></div>
+<div id="page-body"></div>
+</main>
+<footer class="footer"><span>CRICKET GREATNESS LAB <span class="dim">/ Independent and reproducible</span></span><span>Modern deliveries: Cricsheet ODC-BY · historical innings: 2017 research snapshot, rights unverified</span></footer>
+</div></div>
+<script src="data/bootstrap.js"></script><script src="data/focus.js"></script><script src="assets/app.js"></script>
+</body></html>
