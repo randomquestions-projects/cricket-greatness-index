@@ -1,0 +1,78 @@
+name: Refresh international cricket records
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 5 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - 'pipeline/**'
+      - 'tests/**'
+      - '.github/workflows/refresh-data.yml'
+permissions:
+  contents: write
+jobs:
+  ingest-and-score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate data processing
+        run: python -m unittest discover -s tests -v
+      - name: Download ORIGINAL men's international archives
+        run: python -m pipeline.ingest --download
+      - name: Download and import historical Test/ODI/T20I innings snapshots
+        run: python -m pipeline.historical --download
+      - name: Compute modern and historical-comparable indices from observed innings
+        run: python -m pipeline.model
+      - name: Reconcile retired batting careers against ICC totals
+        run: python -m pipeline.reconcile
+      - name: Generate coverage audit
+        run: python -m pipeline.audit
+      - name: Make standalone HTML
+        run: python -m pipeline.standalone
+      - name: Verify reports are genuinely populated
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('data/generated/manifest.json').read_text())
+          r=json.loads(Path('site/data/report.json').read_text())
+          assert m['matchCount']>=1000, 'Too few source matches for a production research build'
+          assert sum(len(a) for a in r['rankings'].values())>=100, 'No real eligible player indices'
+          assert not r['metadata']['isAllTimeEligible'], 'Historically incomplete archive cannot be declared all time'
+          coverage=json.loads(Path('site/data/coverage-status.json').read_text())
+          assert not coverage['historicalCompletenessCertified'], 'Source presence must not be called certified official coverage'
+          assert not coverage['allTimeRankingPermitted'], 'Incomplete history must not generate all-time rankings'
+          h=json.loads(Path('data/generated/historical-manifest.json').read_text())
+          assert h['historicalInnings']>=20000, 'Historical source appears too small or missing'
+          assert h['historicalMatchCount']>=2000, 'Historical match coverage unexpectedly low'
+          assert h['firstDate'][:4]<='1930', 'Prewar Test batting history absent; do not publish as complete'
+          assert h['byFormat'].get('test',0)>=1000, 'Historical Test innings not imported'
+          assert h['byFormat'].get('odi',0)>=500, 'Historical ODI innings not imported'
+          assert r['scorecardParity']['hasHistorical'], 'Historical parity model did not run'
+          assert any(x.get('name')=='Don Bradman' for x in r['scorecardParity']['rankings'].get('test',[])), 'Bradman absent from scorecard parity model'
+          assert any(x.get('name')=='Viv Richards' for x in r['scorecardParity']['rankings'].get('odi',[])), 'Richards absent from historical scorecards'
+          assert any(x.get('name')=='Sachin Tendulkar' for x in r['scorecardParity']['rankings'].get('odi',[])), 'Tendulkar absent from historical scorecards'
+          career=json.loads(Path('site/data/career-reconciliation.json').read_text())
+          assert len(career['checks'])>=5, 'Reference career reconciliation missing'
+          # Do NOT call the source complete just because it includes these players.
+          # Non-matching totals are still reported to the website for investigation.
+          from datetime import date, timedelta
+          assert date.fromisoformat(m['latestDate']) >= date.today()-timedelta(days=90), 'Source archive appears stale (>90 days); investigate before publishing'
+          print('Validated:', m['matchCount'],'matches,',sum(len(x) for x in r['rankings'].values()),'eligible batting indices')
+          PY
+      - name: Commit derived results (never source ZIPs)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/ data/coverage.md site/standalone.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Data: recompute source-backed batting rankings"
+            git push
+          fi
