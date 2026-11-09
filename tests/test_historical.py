@@ -129,9 +129,8 @@ class HistoricalTests(unittest.TestCase):
       self.assertTrue(report['scorecardParity']['hasHistorical'])
       self.assertGreater(report['metadata']['historicalDistinctMatchesAfterDedup'],29)
       self.assertIn('Don Bradman', [x['name'] for x in report['scorecardParity']['rankings']['test']])
-      historic_focus=[x for x in report['historicalFocus'] if x['n']=='Don Bradman']
-      self.assertEqual(len(historic_focus),30)
-      self.assertIsNone(historic_focus[0]['pos'])
+      self.assertEqual(report['historicalFocus'],[])  # rights-uncertain historic innings not published
+      self.assertIn('Don Bradman',[x['name'] for x in report['scorecardParity']['rankings']['test']])
       reconciliation=reconcile_rows(read_innings(data))
       self.assertFalse(reconciliation['allReferenceCareerRunTotalsMatch'])
       self.assertEqual(reconciliation['checkedCareers'],5)
