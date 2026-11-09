@@ -1,0 +1,40 @@
+{
+  "createdUTC": "2026-11-09T21:42:45+00:00",
+  "source": "Cricsheet men's international JSON; ODC-BY 1.0",
+  "formats": [
+    "test",
+    "odi",
+    "t20i"
+  ],
+  "counts": {
+    "test_matches": 899,
+    "test_deliveries": 1730523,
+    "odi_matches": 2617,
+    "odi_deliveries": 1388641,
+    "t20i_matches": 3649,
+    "t20i_deliveries": 820658
+  },
+  "earliestMatch": "2001-12-19",
+  "latestMatch": "2026-11-02",
+  "sources": {
+    "tests_male_json.zip": {
+      "sha256": "2b9a4aa0caa528979d843eada435327912092a67d5321eab4f469681ca1f0dd3",
+      "matches": 899,
+      "deliveries": 1730523
+    },
+    "odis_male_json.zip": {
+      "sha256": "b3e3c7ce548214f44f30e4d656aa3f82e88664829d1157a4779563856737eeaa",
+      "matches": 2617,
+      "deliveries": 1388641
+    },
+    "t20s_male_json.zip": {
+      "sha256": "102586ea122793aafc645e05d6a598b9fff0746935e39b77f2d6f153bc385086",
+      "matches": 3649,
+      "deliveries": 820658
+    }
+  },
+  "archiveSHA256": "f1104a4e49800a48876996d105ab402d64d8606db8ee57c9f00009fdd677cb84",
+  "coverageWarning": "Only Cricsheet-published matches; incomplete official census. Historical scorecard snapshots NOT in this events database.",
+  "dataRights": "Cricsheet ODC-BY attribution required.",
+  "storageWarning": "GitHub Actions artifacts expire; configure separate durable object storage before calling warehouse persistent."
+}
