@@ -1,5 +1,8 @@
 # Cricket Master Data Platform — source-first foundation
 
+> **Production update (2026-11-09):** The open-licensed Cricsheet master archive and six durable SQLite shards have **successfully been published in [the master release](https://github.com/randomquestions-projects/cricket-greatness-index/releases/tag/cricket-master-2026-11-09-42707561618)**. It contains 23,241 matches and 11,739,488 deliveries. Read [QUICKSTART.md](QUICKSTART.md). The historical rights/match census work is NOT completed. The earlier implementation notes below describe the pre-release state.
+
+
 **Status (2026-11-09):** active batting site currently consumes TWO primary datasets. This directory is the start of a REUSABLE data platform, not a claim that all historical cricket scorecards are complete. Ranking models live downstream and must never be used as the source-of-truth data.
 
 ## Source catalog and access decisions
