@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/check-test-ui.yml'
+      - 'site/assets/test-greatness.js'
+      - 'site/test-greatness.html'
   workflow_dispatch:
 permissions:
   contents: read
