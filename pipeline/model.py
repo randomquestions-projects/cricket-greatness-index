@@ -34,7 +34,7 @@ ALIAS={
 'BC Lara':'Brian Lara','CH Gayle':'Chris Gayle','JC Buttler':'Jos Buttler',
 'AC Gilchrist':'Adam Gilchrist','ST Jayasuriya':'Sanath Jayasuriya',
 'HM Amla':'Hashim Amla','DA Warner':'David Warner','GJ Maxwell':'Glenn Maxwell',
-'YBK Jaiswal':'Yashasvi Jaiswal','DJG Sammy':'Daren Sammy'
+'YBK Jaiswal':'Yashasvi Jaiswal','DJG Sammy':'Daren Sammy','GS Sobers':'Garfield Sobers','JB Hobbs':'Jack Hobbs'
 }
 
 def numeral(v,default=0):
