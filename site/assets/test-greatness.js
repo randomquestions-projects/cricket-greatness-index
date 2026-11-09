@@ -25,6 +25,10 @@ function splits(rows,field,avg){
 if(!rows||!rows.length)return '<tr><td colspan="3">No split with at least five innings</td></tr>';
 return rows.slice(0,9).map(r=>'<tr><td>'+e(r.opponent||r.venueClass)+'</td><td>'+n(r.innings,0)+' inns</td><td>'+n(r.quality)+(avg&&r.average!=null?' · '+n(r.average,2)+' avg':'')+'</td></tr>').join('');
 }
+function roadSplits(rows){
+if(!rows||!rows.length)return '<tr><td colspan="3">No opponent + venue samples of at least five innings</td></tr>';
+return rows.slice(0,12).map(r=>'<tr><td>'+e(r.opponent)+' · '+e(r.venueClass)+'</td><td>'+n(r.innings,0)+' inns</td><td>'+n(r.quality)+(r.average!=null?' · '+n(r.average,2)+' avg':'')+'</td></tr>').join('');
+}
 function card(p){
 if(!p)return '<article class="test-profile">No eligible player</article>';
 const qi=p.qualityInterval90,ti=p.teamCarryInterval90,check=p.careerCheck;
@@ -35,6 +39,7 @@ html+='<div>CAREER<b>'+n(p.careerGreatness)+'</b><span>Peak '+(p.peakQuality?n(p
 html+='<p class="test-note">Runs '+n(p.runs,0)+' · Test average '+n(p.average,2)+' · Above era/context expectation '+n(p.runsAboveExpected)+' · '+n(p.historicalInnings,0)+' historical-only innings</p>';
 if(check)html+='<p class="test-note"><strong>Career audit:</strong> reference runs '+n(check.referenceRuns,0)+' ('+(check.runsMatch?'matched':'MISMATCH')+'); innings '+n(check.referenceInnings,0)+' ('+(check.inningsMatch?'matched':'MISMATCH')+'). Totals alone cannot certify match coverage.</p>';
 html+='<h4>Performance against opposing nations</h4><table class="test-mini-table"><thead><tr><th>Opponent</th><th>Sample</th><th>Adjusted quality · avg</th></tr></thead><tbody>'+splits(p.opponents,true,true)+'</tbody></table>';
+html+='<h4>Road vs opponent · combined context</h4><table class="test-mini-table"><thead><tr><th>Opponent & venue</th><th>Sample</th><th>Adjusted quality · avg</th></tr></thead><tbody>'+roadSplits(p.opponentAndVenue)+'</tbody></table>';
 html+='<h4>Home / away / neutral</h4><table class="test-mini-table"><thead><tr><th>Ground type</th><th>Sample</th><th>Adjusted quality</th></tr></thead><tbody>'+splits(p.venues,false,false)+'</tbody></table>';
 html+='<p class="test-note">Venue classification known for '+n(p.venueKnownPct)+'% of innings. Opposition proxy supported for '+n(p.opponentEvidencePct)+'%; same-match proxy supported for '+n(p.peerMatchEvidencePct)+'%; team-carry observations '+n(p.teamCarryInnings,0)+'.</p>';
 html+='<h4>Index sensitivity: remove each context adjustment</h4><table class="test-mini-table"><tbody><tr><td>All controls</td><td>'+n(p.quality)+'</td></tr><tr><td>Without opponent</td><td>'+n(p.sensitivity?.withoutOpposition)+'</td></tr><tr><td>Without home/away</td><td>'+n(p.sensitivity?.withoutVenue)+'</td></tr><tr><td>Without match difficulty</td><td>'+n(p.sensitivity?.withoutMatchContext)+'</td></tr></tbody></table>';
