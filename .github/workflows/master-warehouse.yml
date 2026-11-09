@@ -1,11 +1,5 @@
 name: Build Cricket Master Database (licensed open data)
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'warehouse/master.py'
-      - 'tests/test_master.py'
-      - '.github/workflows/master-warehouse.yml'
   workflow_dispatch:
   schedule:
     - cron: '15 8 * * 1'
@@ -24,9 +18,11 @@ jobs:
         with:
           python-version: '3.12'
       - name: Validate master-warehouse transformation
-        run: python -m unittest tests.test_master -v
+        run: python -m unittest tests.test_master tests.test_match_inventory -v
       - name: Ingest all publicly distributed Cricsheet match JSON
         run: python -m warehouse.master --download
+      - name: Generate source-scoped match-number gap candidates
+        run: python -m warehouse.match_inventory
       - name: Require source match-count, delivery data, stable shards and license
         run: |
           python - <<'PY'
@@ -46,23 +42,31 @@ jobs:
           mkdir -p warehouse/master/release
           cp data/raw/all_json.zip warehouse/master/release/cricsheet-all-json.zip
           cp warehouse/master/master_manifest.json warehouse/master/release/
+          cp warehouse/master/match_inventory.json warehouse/master/release/
           cp warehouse/master/master_*.sqlite.gz warehouse/master/release/
       - name: Publish dated immutable release for durable access
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           DATE="$(date -u +'%Y-%m-%d')"
-          TAG="cricket-master-${DATE}-${GITHUB_RUN_ID}"
+          HASH="$(python -c 'import json;print(json.load(open("warehouse/master/master_manifest.json"))["sourceArchiveSHA256"][:16])')"
+          TAG="cricket-master-source-${HASH}"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Unchanged Cricsheet source hash: release already exists — $TAG"
+            exit 0
+          fi
           gh release create "$TAG" warehouse/master/release/* \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Cricket Master open warehouse — $DATE" \
+            --title "Cricket Master open warehouse — $DATE ($HASH)" \
             --notes "Source: Cricsheet (ODC-BY 1.0), https://cricsheet.org/ . Open match archive, queryable gender/decade SQLite shards and reproducibility manifest. Not an official complete international match census. Historical ESPN-derived source material excluded." \
             --latest=false
       - name: Publish manifest as build artifact and workflow summary
         uses: actions/upload-artifact@v4
         with:
           name: cricket-master-manifest
-          path: warehouse/master/master_manifest.json
+          path: |
+            warehouse/master/master_manifest.json
+            warehouse/master/match_inventory.json
           retention-days: 90
       - name: Report durable release
         run: |
