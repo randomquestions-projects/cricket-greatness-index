@@ -1,5 +1,8 @@
 # Cricket Greatness Lab · independent international batting research
 
+> **2026-11-09 MASTER DATA MILESTONE — OPEN WAREHOUSE LIVE.** The source-first cricket master warehouse is now published separately from the batting website. The verified first version contains **23,241 Cricsheet matches, 11,739,488 delivery events and 358,978 wicket events**, across men's and women's internationals, domestic, and franchise formats. Original open-licensed archive + six reusable SQLite gender/decade partitions: [GitHub Release](https://github.com/randomquestions-projects/cricket-greatness-index/releases/tag/cricket-master-2026-11-09-42707561618). [Warehouse quick start](warehouse/QUICKSTART.md) · [Source match-number gap audit](warehouse/audits/match_inventory.json). **This does NOT certify complete historical or official match coverage.** The older batting section below describes the legacy site pipeline; it is not the source-of-truth warehouse.
+
+
 **Built from scratch. This project does not import Claude's rankings, reference HTML or any fabricated score.**
 
 Goal: rank international cricket batters in Tests, ODIs, T20Is, Tests+ODIs and all three formats, while distinguishing (1) quality, (2) team carry and (3) career greatness. Match-level records are the unit of evidence. All reported values are computed from supplied original source data.
