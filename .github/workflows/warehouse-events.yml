@@ -3,12 +3,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '45 7 * * 1'
-  push:
-    branches: [main]
-    paths:
-      - 'warehouse/events.py'
-      - 'tests/test_warehouse.py'
-      - '.github/workflows/warehouse-events.yml'
 permissions:
   contents: write
 jobs:
