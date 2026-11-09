@@ -460,28 +460,11 @@ def build(input_dir,output_dir,historical_path=None):
             'historicalPlayers':[{'playerId':pid,'name':p['name'],'team':p['team']} for pid,p in
                 {x['playerId']:x for ls in historical.get('rankings',{}).values() for x in ls}.items()],
             'eraTrends':era_trends,'scorecardParity':historical}
-    # A LIMITED research excerpt for the named comparison questions, not the
-    # full third-party historical database. Unlike modern delivery rows, the
-    # historical source contains no reliable position/balls for every inning.
-    focus_names={
-        'Don Bradman','Viv Richards','Sachin Tendulkar','Virat Kohli','Shubman Gill',
-        'Rahul Dravid','Ricky Ponting','Brian Lara','Jacques Kallis','Steve Smith',
-        'Kumar Sangakkara','AB de Villiers','MS Dhoni','Rohit Sharma','Joe Root',
-        'Virender Sehwag','Adam Gilchrist','Sanath Jayasuriya','Hashim Amla',
-        'Chris Gayle','Shivnarine Chanderpaul','Younis Khan','Kane Williamson',
-        'Babar Azam','Suryakumar Yadav'
-    }
-    report['historicalFocus']=[{
-        'm':r['match_id'],'i':r['innings_id'],'d':r['date'],'f':r['format'],
-        'p':r['player_id'],'n':r['name'],'t':r['team'],'o':r['opposition'],
-        'r':int(r['runs']),'b':int(r['balls']) or None,'x':int(r['dismissed']),
-        'pos':None,'er':None,'eo':None,'pr':None,'h':r.get('host'),
-        'reg':r.get('region'),'age':round(r['fullAge'],3) if r['fullAge'] is not None else None,
-        's':1,'e':r.get('event',''),'stage':r.get('event_stage',''),
-        'home':r.get('home'),'teammateRuns':int(r['teammate_runs']),
-        'battingOrderKnown':False
-    } for r in source_rows if r['scorecardOnly'] and r['name'] in focus_names]
-    report['metadata']['historicalFocusDisclaimer']='Selected historic career extracts only; not the entire third-party scorecard archive. Unrecorded balls and batting positions are unknown, not zero.'
+    # Historical 2017 player-level innings are third-party-derived with unclear
+    # bulk republication rights. Do not publish even selected per-match extracts.
+    # Shared-era comparisons are available only through research score aggregates.
+    report['historicalFocus']=[]
+    report['metadata']['historicalFocusDisclaimer']='No individual ESPN-derived historical innings reproduced; model-derived aggregates only.'
     report_text=json.dumps(report,separators=(',',':'))
     (output_dir/'report.json').write_text(report_text)
     (output_dir/'bootstrap.js').write_text('window.CGL_REPORT='+report_text.replace('</','<\\/')+';\n')
