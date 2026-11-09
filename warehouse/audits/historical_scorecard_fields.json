@@ -1,0 +1,111 @@
+{
+  "generatedUTC": "2026-11-09T22:27:13+00:00",
+  "source": "2017 historical innings snapshot, restricted derivative",
+  "rightsStatus": "UNVERIFIED: historical records must not be distributed as an open database",
+  "individualHistoricalSourceRowsPublished": false,
+  "containsIndividualMatchScorecards": false,
+  "officialMatchCensusCertified": false,
+  "scorecardCompletenessCertified": false,
+  "sourceSHA256": "3e5f9dc5c34407fcfcb1931bf116c46650fd93ffd8af1c0146603c91e21d7c54",
+  "formats": {
+    "test": {
+      "historicalBattingRows": 80203,
+      "sourceCandidateMatches": 2269,
+      "sourceTeamInningsGroups": 8230,
+      "fields": {
+        "battingRuns": "observed_in_source",
+        "bowlingFigures": "not_provided",
+        "fieldingDismissalTypes": "not_provided",
+        "extras": "not_systematically_reconciled",
+        "battingPosition": "unavailable",
+        "matchResult": "unavailable",
+        "officialMatchNumber": "unavailable"
+      },
+      "missingnessRowCounts": {
+        "missing_batting_order": 80203,
+        "zero_or_unknown_balls_faced": 22129,
+        "no_detailed_dismissal_type": 80203,
+        "no_bowler_exposures": 80203,
+        "no_reconciled_team_total": 24
+      },
+      "decadeBattingRows": {
+        "1870": 120,
+        "1880": 1077,
+        "1890": 1214,
+        "1900": 1573,
+        "1910": 1066,
+        "1920": 1751,
+        "1930": 3015,
+        "1940": 1527,
+        "1950": 5759,
+        "1960": 6671,
+        "1970": 7053,
+        "1980": 8964,
+        "1990": 12147,
+        "2000": 16468,
+        "2010": 11798
+      }
+    },
+    "odi": {
+      "historicalBattingRows": 68091,
+      "sourceCandidateMatches": 4057,
+      "sourceTeamInningsGroups": 7724,
+      "fields": {
+        "battingRuns": "observed_in_source",
+        "bowlingFigures": "not_provided",
+        "fieldingDismissalTypes": "not_provided",
+        "extras": "not_systematically_reconciled",
+        "battingPosition": "unavailable",
+        "matchResult": "unavailable",
+        "officialMatchNumber": "unavailable"
+      },
+      "missingnessRowCounts": {
+        "missing_batting_order": 68091,
+        "no_detailed_dismissal_type": 68091,
+        "no_bowler_exposures": 68091,
+        "zero_or_unknown_balls_faced": 757,
+        "no_reconciled_team_total": 1671
+      },
+      "decadeBattingRows": {
+        "1970": 1418,
+        "1980": 8838,
+        "1990": 16266,
+        "2000": 24510,
+        "2010": 17059
+      }
+    },
+    "t20i": {
+      "historicalBattingRows": 9897,
+      "sourceCandidateMatches": 685,
+      "sourceTeamInningsGroups": 1220,
+      "fields": {
+        "battingRuns": "observed_in_source",
+        "bowlingFigures": "not_provided",
+        "fieldingDismissalTypes": "not_provided",
+        "extras": "not_systematically_reconciled",
+        "battingPosition": "unavailable",
+        "matchResult": "unavailable",
+        "officialMatchNumber": "unavailable"
+      },
+      "missingnessRowCounts": {
+        "missing_batting_order": 9897,
+        "no_detailed_dismissal_type": 9897,
+        "no_bowler_exposures": 9897,
+        "zero_or_unknown_balls_faced": 204,
+        "no_reconciled_team_total": 685
+      },
+      "decadeBattingRows": {
+        "2000": 2083,
+        "2010": 7814
+      }
+    }
+  },
+  "methodology": "Aggregate field presence and candidate match keys only; no individual player, innings or match rows are released.",
+  "limitations": [
+    "Match counts use date+teams+format as a provisional signature; may merge same-day matches",
+    "A zero balls-faced value can mean either genuine 0 or unknown; source schema cannot distinguish",
+    "Missing bowling/fielding/official match identifiers cannot be supplied by this snapshot",
+    "A historical batting row with a team total is still not a full scorecard",
+    "No historical original data is added to the public master warehouse or release"
+  ]
+}
