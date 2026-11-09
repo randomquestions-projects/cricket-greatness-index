@@ -1,0 +1,65 @@
+name: Build Cricket Master Database (licensed open data)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 8 * * 1'
+permissions:
+  contents: write
+concurrency:
+  group: cricket-master-warehouse
+  cancel-in-progress: false
+jobs:
+  ingest-open-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate master-warehouse transformation
+        run: python -m unittest tests.test_master -v
+      - name: Ingest all publicly distributed Cricsheet match JSON
+        run: python -m warehouse.master --download
+      - name: Require source match-count, delivery data, stable shards and license
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('warehouse/master/master_manifest.json').read_text())
+          assert x['license']=='ODC-BY 1.0'
+          assert x['counts']['matches']>=15000
+          assert x['counts']['deliveries']>=3000000
+          assert x['counts']['nonempty_matches']>=15000
+          assert len(x['shards'])>=5
+          assert all(Path('warehouse/master',s['file']).exists() for s in x['shards'].values())
+          print('Cricsheet complete archive',x['counts'],x['byGenderAndCategory'])
+          PY
+      - name: Stage legally redistributable source snapshot and master shards
+        run: |
+          mkdir -p warehouse/master/release
+          cp data/raw/all_json.zip warehouse/master/release/cricsheet-all-json.zip
+          cp warehouse/master/master_manifest.json warehouse/master/release/
+          cp warehouse/master/master_*.sqlite.gz warehouse/master/release/
+      - name: Publish dated immutable release for durable access
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DATE="$(date -u +'%Y-%m-%d')"
+          TAG="cricket-master-${DATE}-${GITHUB_RUN_ID}"
+          gh release create "$TAG" warehouse/master/release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Cricket Master open warehouse — $DATE" \
+            --notes "Source: Cricsheet (ODC-BY 1.0), https://cricsheet.org/ . Open match archive, queryable gender/decade SQLite shards and reproducibility manifest. Not an official complete international match census. Historical ESPN-derived source material excluded." \
+            --latest=false
+      - name: Publish manifest as build artifact and workflow summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cricket-master-manifest
+          path: warehouse/master/master_manifest.json
+          retention-days: 90
+      - name: Report durable release
+        run: |
+          echo "Open source data warehouse published as immutable GitHub release on this run." >> "$GITHUB_STEP_SUMMARY"
+          echo "Stored original licensed Cricsheet archive and normalized SQLite shards by gender/decade." >> "$GITHUB_STEP_SUMMARY"
+          echo "Coverage is measured against Cricsheet archive; official international census remains outstanding." >> "$GITHUB_STEP_SUMMARY"
