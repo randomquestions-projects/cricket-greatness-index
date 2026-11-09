@@ -28,15 +28,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p data/raw
-          gh release download cricket-master-2026-11-09-42707561618 --repo "$GITHUB_REPOSITORY" --pattern cricsheet-all-json.zip --dir data/raw
+          TAG="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName,publishedAt --jq '[.[] | select(.tagName | startswith("cricket-master-"))] | sort_by(.publishedAt) | reverse | .[0].tagName')"
+          test -n "$TAG" && test "$TAG" != null
+          echo "Source master snapshot: $TAG"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern cricsheet-all-json.zip --pattern master_manifest.json --dir data/raw
           mv data/raw/cricsheet-all-json.zip data/raw/all_json.zip
           python - <<'PY'
           import hashlib, json
           from pathlib import Path
-          # Preserve provenance: pin and validate original 2026-11-09 data release.
-          actual=hashlib.file_digest(open('data/raw/all_json.zip','rb'),'sha256').hexdigest()
-          print('Cricsheet release archive SHA256',actual)
-          assert len(actual)==64
+          m=json.loads(Path("data/raw/master_manifest.json").read_text())
+          with Path("data/raw/all_json.zip").open("rb") as stream:
+            actual=hashlib.file_digest(stream,"sha256").hexdigest()
+          assert actual==m["sourceArchiveSHA256"], "Downloaded Cricsheet archive hash mismatches its release manifest"
+          assert m["license"]=="ODC-BY 1.0"
+          print("Validated licensed master snapshot SHA256",actual)
           PY
       - name: Build batting bowling fielding and innings scorecard tables
         run: python -m warehouse.scorecards
