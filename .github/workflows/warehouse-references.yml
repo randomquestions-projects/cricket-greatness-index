@@ -35,5 +35,7 @@ jobs:
           git add warehouse/exports/identities.sqlite.gz warehouse/exports/identity_manifest.json
           if ! git diff --cached --quiet; then
             git commit -m 'Data warehouse: refresh Cricsheet player and venue IDs'
-            git push
+            git pull --rebase origin main
+            git pull --rebase origin main
+          git push
           fi
