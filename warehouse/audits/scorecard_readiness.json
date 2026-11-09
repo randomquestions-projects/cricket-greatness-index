@@ -1,0 +1,86 @@
+{
+  "calculatedUTC": "2026-11-09T22:29:48+00:00",
+  "purpose": "Publication-safe coverage across existing batting study and licensed scorecard warehouse",
+  "historicalRecordRedistributionRights": "NOT_ESTABLISHED",
+  "publishedRawHistoricalRows": false,
+  "independentOfficialCensusComplete": false,
+  "independentScorecardComparisonComplete": false,
+  "allTimeRankingsCertified": false,
+  "formatCoverage": {
+    "test": {
+      "currentObservedMatches": 2627,
+      "openDeliveryDerivedMatches": 899,
+      "historicBattingOnlyMatchesAfterOverlapSuppression": 1728,
+      "sourceHistoricCandidateMatchesBeforeOverlap": 2269,
+      "historicBattingRowsBeforeOverlap": 80203,
+      "historicMissingnessRowCounts": {
+        "missing_batting_order": 80203,
+        "zero_or_unknown_balls_faced": 22129,
+        "no_detailed_dismissal_type": 80203,
+        "no_bowler_exposures": 80203,
+        "no_reconciled_team_total": 24
+      },
+      "independentlyCertifiedCompleteScorecards": 0,
+      "independentMatchByMatchReconciliation": "NOT_DONE",
+      "historicBowlingFigures": "MISSING_FROM_CURRENT_SOURCE",
+      "historicFieldingFigures": "MISSING_FROM_CURRENT_SOURCE",
+      "historicBattingOrder": "MISSING_FROM_CURRENT_SOURCE",
+      "rightsToPublishHistoricScorecards": "NOT_VERIFIED",
+      "interpretation": "Observed historical coverage is batting-only, not a complete scorecard."
+    },
+    "odi": {
+      "currentObservedMatches": 5092,
+      "openDeliveryDerivedMatches": 2617,
+      "historicBattingOnlyMatchesAfterOverlapSuppression": 2475,
+      "sourceHistoricCandidateMatchesBeforeOverlap": 4057,
+      "historicBattingRowsBeforeOverlap": 68091,
+      "historicMissingnessRowCounts": {
+        "missing_batting_order": 68091,
+        "no_detailed_dismissal_type": 68091,
+        "no_bowler_exposures": 68091,
+        "zero_or_unknown_balls_faced": 757,
+        "no_reconciled_team_total": 1671
+      },
+      "independentlyCertifiedCompleteScorecards": 0,
+      "independentMatchByMatchReconciliation": "NOT_DONE",
+      "historicBowlingFigures": "MISSING_FROM_CURRENT_SOURCE",
+      "historicFieldingFigures": "MISSING_FROM_CURRENT_SOURCE",
+      "historicBattingOrder": "MISSING_FROM_CURRENT_SOURCE",
+      "rightsToPublishHistoricScorecards": "NOT_VERIFIED",
+      "interpretation": "Observed historical coverage is batting-only, not a complete scorecard."
+    },
+    "t20i": {
+      "currentObservedMatches": 3817,
+      "openDeliveryDerivedMatches": 3649,
+      "historicBattingOnlyMatchesAfterOverlapSuppression": 168,
+      "sourceHistoricCandidateMatchesBeforeOverlap": 685,
+      "historicBattingRowsBeforeOverlap": 9897,
+      "historicMissingnessRowCounts": {
+        "missing_batting_order": 9897,
+        "no_detailed_dismissal_type": 9897,
+        "no_bowler_exposures": 9897,
+        "zero_or_unknown_balls_faced": 204,
+        "no_reconciled_team_total": 685
+      },
+      "independentlyCertifiedCompleteScorecards": 0,
+      "independentMatchByMatchReconciliation": "NOT_DONE",
+      "historicBowlingFigures": "MISSING_FROM_CURRENT_SOURCE",
+      "historicFieldingFigures": "MISSING_FROM_CURRENT_SOURCE",
+      "historicBattingOrder": "MISSING_FROM_CURRENT_SOURCE",
+      "rightsToPublishHistoricScorecards": "NOT_VERIFIED",
+      "interpretation": "Observed historical coverage is batting-only, not a complete scorecard."
+    }
+  },
+  "openScorecardWarehouseMatches": 23241,
+  "openScorecardWarehouseSource": "Cricsheet ODC-BY 1.0",
+  "openScorecardSourceSHA256": "13f9f5d5153c36257d9ecf39d7c11a8c5615a5b146150ac5462fb0c0278b9b1b",
+  "historicalSourceSHA256": "3e5f9dc5c34407fcfcb1931bf116c46650fd93ffd8af1c0146603c91e21d7c54",
+  "limitations": [
+    "These values combine aggregate manifests, not independently verified identical match IDs.",
+    "Historical post-dedup coverage stems from the existing batting pipeline's provisional date/team keys.",
+    "No historical scorecard row is redistributed here; source licensing not established.",
+    "Modern scorecards are delivery-derived and may lack independently published field corrections.",
+    "The number zero for independently certified complete scorecards means no independent comparison performed, NOT proof the cards are incomplete.",
+    "Candidate historical matches may include key collisions; source rows differ from post-overlap counts."
+  ]
+}
