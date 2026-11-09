@@ -14,7 +14,7 @@ Source is the existing merged research ledger: 2017 ESPN-derived historical batt
 
 Opposition factor: scorecard-era runs per batter appearance allowed by an opposing nation over a ±5-year window, *excluding the whole evaluated match*, relative to other nearby Tests. It is a crude, confounded **opposition-team quality proxy**, not the skill of bowlers actually faced. Cap log effect at ±0.22.
 
-Venue factor: nearby-year away/home scoring effect relative to peers; only applied when host is known. Neutral/unknown venue does not receive an inferred adjustment. Cap log effect at ±0.12.
+Venue factor: nearby-year away/home scoring effect relative to peers; only applied when host is known; the rated batter is removed from venue reference scoring as well. Neutral/unknown venue does not receive an inferred adjustment. Cap log effect at ±0.12.
 
 Match difficulty: other batters in the same Test, excluding all appearances of the rated batter. Shrunk toward era baseline, log effect capped ±0.17. It is a same-match batting-scoring **proxy**, not observed pitch condition.
 
