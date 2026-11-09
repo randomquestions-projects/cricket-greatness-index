@@ -213,6 +213,7 @@ def build(archive,output,limit=0):
     result={
         "createdUTC":datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source":"Cricsheet.org","sourceURL":URL,"license":"ODC-BY 1.0",
+        "licenseURL":"https://opendatacommons.org/licenses/by/1-0/",
         "attribution":"Data provided by Cricsheet.org under ODC-BY 1.0; transformed by Cricket Master Warehouse.",
         "sourceArchiveSHA256":archive_sha(archive),"sourceLicenseNoticePresent":license_seen,
         "allSourceMatches":len(seen),"counts":dict(counters),
