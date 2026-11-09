@@ -1,0 +1,90 @@
+{
+  "registryVersion": "2026-11-09.1",
+  "sources": [
+    {
+      "id": "cricsheet",
+      "status": "ingested_in_rankings",
+      "type": "first_party_events",
+      "url": "https://cricsheet.org/downloads/",
+      "rights": "ODC-BY 1.0",
+      "scope": "men international; planned women/domestic expansion"
+    },
+    {
+      "id": "historical_golicher",
+      "status": "ingested_restricted",
+      "type": "2017_historical_batting_innings",
+      "url": "https://github.com/dgolicher/cricket",
+      "rights": "unverified upstream scorecard reuse"
+    },
+    {
+      "id": "cricsheet_register",
+      "status": "ingested_identity_warehouse",
+      "type": "identity_crosswalk",
+      "url": "https://cricsheet.org/register/",
+      "rights": "ODC-BY 1.0"
+    },
+    {
+      "id": "cricket_database",
+      "status": "access_and_rights_review",
+      "type": "independent_historical_scorecards_and_census",
+      "url": "https://cricketdatabase.com/",
+      "rights": "API tier limitations"
+    },
+    {
+      "id": "cricarcade",
+      "status": "rights_review",
+      "type": "historical_scorecards",
+      "url": "https://cricarcade.com/data-sources",
+      "rights": "bulk reuse unverified"
+    },
+    {
+      "id": "icc",
+      "status": "career_totals_only",
+      "type": "official_records",
+      "url": "https://www.icc-cricket.com/",
+      "rights": "verify data licensing"
+    },
+    {
+      "id": "espn_statsguru",
+      "status": "reference_only",
+      "type": "historical_scorecards",
+      "url": "https://stats.espncricinfo.com/",
+      "rights": "bulk reuse unverified"
+    },
+    {
+      "id": "howstat",
+      "status": "reference_only",
+      "type": "historical_scorecards",
+      "url": "https://www.howstat.com/",
+      "rights": "bulk reuse unverified"
+    },
+    {
+      "id": "cricketarchive",
+      "status": "not_ingested",
+      "type": "historic_and_domestic_scorecards",
+      "url": "https://cricketarchive.com/",
+      "rights": "commercial"
+    },
+    {
+      "id": "cricketdata_r",
+      "status": "not_ingested",
+      "type": "existing_source_adapter",
+      "url": "https://pkg.robjhyndman.com/cricketdata/",
+      "rights": "upstream source terms apply"
+    },
+    {
+      "id": "doosra",
+      "status": "not_ingested",
+      "type": "independent_aggregation_check",
+      "url": "https://huggingface.co/datasets/Sarthak213/doosra-cricket",
+      "rights": "license verification needed"
+    },
+    {
+      "id": "era5",
+      "status": "not_ingested",
+      "type": "historical_weather",
+      "url": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries",
+      "rights": "Copernicus source terms apply"
+    }
+  ]
+}
