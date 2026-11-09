@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test Batting Greatness · Cricket Greatness Lab</title>
+<meta name="description" content="Historically comparable Test batting rankings: era-adjusted quality, team carry, peak and career greatness. Transparent opponent, away, and match context with uncertainty.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+.test-layout{max-width:1250px;margin:auto;padding:34px 36px 90px}
+.test-hero{background:#153a3e;color:white;border-radius:16px;padding:32px;margin-bottom:22px}
+.test-hero h1{font-size:clamp(30px,4vw,49px);line-height:1.07;letter-spacing:-.045em;margin:10px 0}
+.test-hero h1 em{color:#91e2bc;font-family:Georgia,serif}.test-hero p{color:#c6dcd3;max-width:760px;font-size:13px;line-height:1.8}
+.test-kicker{letter-spacing:.15em;color:#96d6ba;font-size:10px;font-weight:800;text-transform:uppercase}
+.test-link{display:inline-block;color:#fff;background:#286759;padding:10px 14px;border-radius:7px;font-weight:700;font-size:12px;margin-top:10px}
+.test-link:hover{background:#347c69;text-decoration:none}
+.test-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:18px 0}
+.test-metric{border-radius:12px;background:white;padding:21px;border:1px solid var(--line)}
+.test-metric h3{margin:7px 0;font-size:16px}.test-metric p{font-size:11.5px;color:var(--muted);line-height:1.7}
+.test-section{margin-top:29px}.test-section h2{font-size:18px}
+.test-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;background:white;padding:15px;border:1px solid var(--line);border-radius:9px}
+.test-actions label{font-size:11px;font-weight:800;color:#35554d;display:flex;flex-direction:column;gap:5px}
+.test-actions select,.test-actions input{border:1px solid #c8d8d0;border-radius:7px;padding:8px 9px;min-width:150px;background:#fff;color:var(--ink)}
+.test-table{overflow:auto;background:white;border:1px solid var(--line);border-radius:10px;margin-top:12px}
+.test-table table{width:100%;border-collapse:collapse;min-width:830px}
+.test-table th,.test-table td{padding:11px 12px;border-bottom:1px solid var(--line);font-size:11px;text-align:right;white-space:nowrap}
+.test-table th{font-size:10px;background:#f3f8f4;color:#53756a}
+.test-table th:nth-child(2),.test-table td:nth-child(2){text-align:left}
+.test-table tbody tr{cursor:pointer}.test-table tbody tr:hover{background:#f0f8f1}
+.test-table strong{color:#187d68}
+.test-comparison{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.test-profile{background:white;border:1px solid var(--line);border-radius:12px;padding:17px;min-width:0}
+.test-profile h3{font-size:19px;margin:4px 0}
+.test-profile .big{font-weight:900;font-size:29px;letter-spacing:-.04em;color:#187d68}
+.test-profile .triple{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:13px 0}
+.test-profile .triple div{background:#f2f7f3;padding:10px;border-radius:6px;font-size:10px}
+.test-profile .triple b{font-size:16px;display:block}
+.test-mini-table{width:100%;border-collapse:collapse}.test-mini-table th,.test-mini-table td{padding:8px;border-bottom:1px solid #e8efea;text-align:left;font-size:10.5px}
+.test-mini-table td:last-child{text-align:right;font-weight:700}
+.test-note{font-size:11px;color:var(--muted);line-height:1.8}
+.test-warning{padding:14px;border:1px solid #e8debf;background:#fff9eb;border-radius:8px;color:#6a5930;font-size:11.5px}
+.test-bar{background:#e9f2ec;height:5px;border-radius:5px;overflow:hidden}.test-fill{height:100%;background:#21886d}
+.test-report{background:#fff;border:1px solid var(--line);padding:20px;border-radius:11px;line-height:1.8;font-size:12px}
+.test-report h3{font-size:13px;margin-bottom:4px}
+@media(max-width:760px){.test-layout{padding:20px 14px}.test-grid{grid-template-columns:1fr}.test-comparison{grid-template-columns:1fr}.test-hero{padding:23px}.test-profile .triple{gap:4px}.test-actions select{min-width:130px}}
+</style></head>
+<body>
+<div class="test-layout">
+  <header style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 18px">
+    <a href="./" style="font-weight:800;font-size:14px;color:#254b42">CG · Cricket Greatness Lab</a>
+    <span class="pill">ALL-ERA TEST RESEARCH · EXPERIMENTAL</span>
+  </header>
+  <section class="test-hero">
+    <div class="test-kicker">Research v0.3 · Common scorecard standard</div>
+    <h1>Who was the greatest <em>Test batter?</em></h1>
+    <p>Bradman. Kohli. Tendulkar. Sobers. Lara. Ponting. A fairer comparison uses three distinct measures, with context for era, opposition, away performances, and how everyone else in the match scored.</p>
+    <a class="test-link" href="./#test">Return to the main Cricket Greatness Lab</a>
+  </section>
+  <div id="test-status" class="test-warning">Loading source-backed research scores. Rankings will appear after the data pipeline completes.</div>
+  <div class="test-grid">
+    <div class="test-metric"><span class="k-label">01 · Batting ability</span><h3>Era-adjusted quality</h3><p>Runs and wicket survival against the batter's contemporaries, adjusting cautiously for opponent, home/away and same-match scoring.</p></div>
+    <div class="test-metric"><span class="k-label">02 · Relative contribution</span><h3>Team carry</h3><p>How much did the batter exceed the other batters in the same innings? A 70 when teammates struggle is treated differently from a 70 in a strong lineup.</p></div>
+    <div class="test-metric"><span class="k-label">03 · Lasting excellence</span><h3>Peak &amp; career greatness</h3><p>Best rolling 25-innings stretch versus sustained contextual surplus over an entire observed career. No forced single winner.</p></div>
+  </div>
+  <section class="test-section">
+    <h2>Explore the Test rankings</h2>
+    <div class="test-actions">
+      <label>Rank by<select id="test-metric"><option value="quality">Era-adjusted quality</option><option value="teamCarry">Team carry</option><option value="careerGreatness">Career greatness</option><option value="peakQuality">Peak (25 innings)</option></select></label>
+      <label>Search batter or nation<input id="test-search" placeholder="Bradman, Kohli, Australia…"></label>
+      <label>Minimum innings<select id="test-min"><option value="35">35+</option><option value="70">70+</option><option value="120">120+</option></select></label>
+      <span class="test-note" id="test-count"></span>
+    </div>
+    <div id="test-ranking" class="test-table"></div>
+    <p class="test-note">Numbers are researcher-defined research scores; 100 is the contextual baseline. The historical archive is not independently complete, and rankings do not establish who would win across eras.</p>
+  </section>
+  <section class="test-section">
+    <h2>Head-to-head: contextual evidence</h2>
+    <div class="test-actions">
+      <label>First batter<select id="test-first"></select></label>
+      <label>Second batter<select id="test-second"></select></label>
+      <span class="test-note">Change either player to examine home/away, opposition, peak, carry, and sensitivity.</span>
+    </div>
+    <div class="test-comparison" id="test-compare"></div>
+  </section>
+  <section class="test-section">
+    <h2>What is and is not controlled for?</h2>
+    <div class="test-report">
+      <h3>Controls included in every era</h3>
+      Era: leave-player-out nearby-year scoring reference. Opposition: shrunken average scoring against the opposing nation, excluding the evaluated match. Home/away: estimated relative to other recorded home/away innings, when the venue host is known. Match difficulty: teammates and opponents in the same Test, excluding the batter's own appearances. Team carry: other batters in the <em>same innings</em>. All of these are based on scorecards, not modern delivery detail.
+      <h3>Separately modeled</h3>
+      Quality and team carry have match-cluster bootstrap 90% <em>conditional</em> intervals. Peak is a maximum rolling 25-innings adjusted-quality estimate; career greatness rewards both observed skill and cumulative adjusted production. Opposition, venue and match-condition controls can be individually removed in sensitivity checks on the player panels.
+      <h3>What remains unmeasured</h3>
+      Specific historical bowlers faced, consistent historic batting position, actual pitch measurements, weather, series identifiers, rules changes and many source gaps. Opponent and match scoring are imperfect proxies. Early Test competition pools were smaller and different from modern ones. Bootstrap intervals do not capture incomplete source coverage or model-choice uncertainty.
+      <h3>Historical use and licensing</h3>
+      Modern original delivery/scorecard data originate from Cricsheet's ODC-BY archive. Historical batting data originate from a 2017 ESPN-derived research snapshot with unverified bulk redistribution rights. This public page displays model-derived player aggregates only—no historical match-by-match extracts or historical source archive. The project remains research-only pending a clearer assessment of publishing rights.
+      <p class="test-note">The calculations and validation tests are in <a href="https://github.com/randomquestions-projects/cricket-greatness-index/blob/main/pipeline/test_greatness.py">pipeline/test_greatness.py</a> and <a href="https://github.com/randomquestions-projects/cricket-greatness-index/blob/main/docs/test-greatness-methodology.md">Test index methodology</a>.</p>
+    </div>
+  </section>
+</div>
+<script src="assets/test-greatness.js"></script></body></html>
