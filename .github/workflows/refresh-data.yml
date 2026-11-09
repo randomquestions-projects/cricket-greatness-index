@@ -74,5 +74,7 @@ jobs:
           git add site/data/ data/coverage.md site/standalone.html
           if ! git diff --cached --quiet; then
             git commit -m "Data: recompute source-backed batting rankings"
-            git push
+            git pull --rebase origin main
+            git pull --rebase origin main
+          git push
           fi
