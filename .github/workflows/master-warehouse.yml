@@ -1,5 +1,11 @@
 name: Build Cricket Master Database (licensed open data)
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'warehouse/master.py'
+      - 'tests/test_master.py'
+      - '.github/workflows/master-warehouse.yml'
   workflow_dispatch:
   schedule:
     - cron: '15 8 * * 1'
