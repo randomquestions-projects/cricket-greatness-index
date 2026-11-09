@@ -86,13 +86,42 @@ jobs:
           assert date.fromisoformat(m['latestDate']) >= date.today()-timedelta(days=90), 'Source archive appears stale (>90 days); investigate before publishing'
           print('Validated:', m['matchCount'],'matches,',sum(len(x) for x in r['rankings'].values()),'eligible batting indices')
           PY
-      - name: Commit derived results (never source ZIPs)
+      - name: Commit validated derived data without merge conflicts
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/ data/coverage.md site/standalone.html
-          if ! git diff --cached --quiet; then
+          SNAP="$(mktemp -d)"
+          cp -a site/data "$SNAP/site-data"
+          cp data/coverage.md "$SNAP/coverage.md"
+          cp site/standalone.html "$SNAP/standalone.html"
+          BASE_SHA="$(git rev-parse HEAD)"
+          # Rebase would conflict on regenerated large data outputs. Instead,
+          # apply these already validated outputs on the latest remote tree.
+          # Refuse to publish if the model code or tests changed during this run.
+          for ATTEMPT in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git diff --quiet "$BASE_SHA" origin/main -- pipeline/ tests/ .github/workflows/refresh-data.yml; then
+              echo "Model or build code changed after checkout: skip stale results; latest code's workflow will rebuild."
+              exit 0
+            fi
+            git reset --hard origin/main
+            mkdir -p site/data data
+            cp -a "$SNAP/site-data/." site/data/
+            cp "$SNAP/coverage.md" data/coverage.md
+            cp "$SNAP/standalone.html" site/standalone.html
+            git add site/data/ data/coverage.md site/standalone.html
+            if git diff --cached --quiet; then
+              echo "No changes in computed cricket outputs"
+              exit 0
+            fi
             git commit -m "Data: recompute source-backed batting rankings"
-            git pull --rebase origin main
-            git push
-          fi
+            if git push origin HEAD:main; then
+              echo "Committed validated rankings from current model"
+              exit 0
+            fi
+            echo "Concurrent push; retrying generated output on latest main"
+            sleep 2
+          done
+          echo "Unable to safely publish source-backed data after five retries"
+          exit 1
