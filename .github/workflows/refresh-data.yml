@@ -75,6 +75,5 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Data: recompute source-backed batting rankings"
             git pull --rebase origin main
-            git pull --rebase origin main
-          git push
+            git push
           fi
