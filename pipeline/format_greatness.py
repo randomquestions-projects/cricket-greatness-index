@@ -12,7 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from .ingest import ROOT
-from .model import read_innings
+from .ledger import read_innings
 from .test_greatness import build_from_rows
 
 FORMATS=("test","odi","t20i")
