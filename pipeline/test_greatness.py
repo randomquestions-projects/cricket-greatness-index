@@ -21,7 +21,7 @@ import random
 import statistics
 from .historical import country
 from .ingest import ROOT
-from .model import read_innings
+from .ledger import read_innings
 
 MIN_INNINGS=35
 BOOTSTRAPS=240
