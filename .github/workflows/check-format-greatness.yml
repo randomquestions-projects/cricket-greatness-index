@@ -1,0 +1,41 @@
+name: Validate all-era batting greatness dashboards
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-format-greatness.yml'
+      - 'site/assets/format-greatness.js'
+      - 'site/format-greatness.html'
+      - 'tests/test_format_greatness.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests for format normalization and JAWS-inspired comparison
+        run: python -m unittest tests.test_format_greatness -v
+      - name: Validate browser script and original nav links
+        run: |
+          node --check site/assets/format-greatness.js
+          python - <<'PY'
+          from pathlib import Path
+          h=Path('site/format-greatness.html').read_text()
+          assert '<script src="assets/format-greatness.js"></script>' in h
+          for f in ['test','odi','t20i','test_odi','all_three']:
+              assert 'format='+f in h
+              assert 'format='+f in Path('site/index.html').read_text()
+          j=Path('site/assets/format-greatness.js').read_text()
+          assert 'data/greatness-combined.json' in j
+          assert 'opponentAndVenue' in j
+          assert 'bestSevenSeasons' in j
+          print('UI validation passed: 5 formats, 3 indices, JAWS, comparison')
+          PY
