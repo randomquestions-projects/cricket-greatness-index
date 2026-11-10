@@ -48,6 +48,11 @@ assert.match(w.document.querySelector('#page-body').textContent,/Historic battin
 await route('matches');
 await settle();
 assert.ok(w.document.querySelector('#match-results').textContent.length>30,'modern explorer blank');
+const teammateButton=w.document.querySelector('[data-match-innings]');
+assert.ok(teammateButton,'modern explorer must provide per-innings teammate drilldown');
+teammateButton.click();
+assert.match(w.document.querySelector('#match-detail').textContent,/What the other batters scored/);
+assert.match(w.document.querySelector('#match-detail').textContent,/Share of recorded bat runs/);
 // No second app / old bootstrap data loaded.
 assert.equal(w.document.querySelectorAll('script[src]').length,1);
 assert.equal(w.document.querySelector('script[src]').getAttribute('src'),'assets/app.js');
