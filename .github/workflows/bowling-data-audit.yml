@@ -1,0 +1,106 @@
+name: Audit open-licensed international bowling coverage
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bowling-data-audit.yml'
+      - 'research/bowling_audit/audit.py'
+      - 'research/bowling_audit/test_audit.py'
+permissions:
+  contents: write
+concurrency:
+  group: licensed-bowling-availability-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    name: Audit bowling data only — no batting app modification
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify isolated bowling audit logic
+        run: python -m unittest research.bowling_audit.test_audit -v
+      - name: Download existing open-licensed scorecards, not historical archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/cricket-bowling-source
+          TAG="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName,publishedAt --jq '[.[] | select(.tagName | startswith("cricket-scorecards-source-"))] | sort_by(.publishedAt) | reverse | .[0].tagName')"
+          test -n "$TAG" && test "$TAG" != null
+          echo "Auditing immutable licensed source release $TAG"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern 'scorecards_male_*.sqlite.gz' --pattern 'scorecards_manifest.json' --dir /tmp/cricket-bowling-source
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('/tmp/cricket-bowling-source')
+          m=json.loads((root/'scorecards_manifest.json').read_text())
+          assert m['sourceRights']=='ODC-BY-1.0 with attribution'
+          assert m['independentlyCompleteScorecards'] is False
+          assert m['counts']['matches']>=23000
+          paths=sorted(root.glob('scorecards_male_*.sqlite.gz'))
+          assert len(paths)==3, [x.name for x in paths]
+          assert all(p.stat().st_size>10_000 for p in paths)
+          print("Licensed male scorecard shards:",[p.name for p in paths])
+          PY
+      - name: Audit only male Test ODI T20I records in existing released warehouse
+        run: |
+          python -m research.bowling_audit.audit \
+            --shards /tmp/cricket-bowling-source/scorecards_male_*.sqlite.gz \
+            --output research/bowling_audit/output
+      - name: Verify source coverage, historical non-certification and no batting app changes
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('research/bowling_audit/output/coverage.json')
+          doc=json.loads(p.read_text())
+          assert doc['scope'].startswith('Mens Test')
+          assert doc['historicalBowlingCompletenessCertified'] is False
+          assert doc['officialMatchCensusReconciled'] is False
+          assert doc['officialPlayerCareerTotalsChecked'] is False
+          assert all(x['sha256'] for x in doc['sourceShards'])
+          for fmt,minimum in [('test',850),('odi',2500),('t20i',3500)]:
+              assert doc['byFormat'][fmt]['matches']>=minimum
+              assert doc['byFormat'][fmt]['wickets']>0
+              assert doc['byFormat'][fmt]['firstObservedYear']>=2000
+          assert len(doc['playerCaseStudies'])>=15
+          assert 'do not' not in doc['rightsGate'].lower() or 'licensed' in doc['rightsGate'].lower()
+          print('License-safe audit complete:', {k:{x:v[x] for x in ('matches','bowlingRows','wickets','firstObservedYear')}
+                    for k,v in doc['byFormat'].items()})
+          PY
+          git diff --exit-code -- site pipeline .github/workflows/refresh-data.yml
+      - name: Commit aggregate bowling-only audit reports
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          SNAP="$(mktemp -d)"
+          cp research/bowling_audit/output/coverage.json "$SNAP/coverage.json"
+          cp research/bowling_audit/output/coverage.md "$SNAP/coverage.md"
+          BASE="$(git rev-parse HEAD)"
+          for ATTEMPT in 1 2 3; do
+            git fetch origin main
+            if ! git diff --quiet "$BASE" origin/main -- research/bowling_audit/audit.py research/bowling_audit/test_audit.py .github/workflows/bowling-data-audit.yml; then
+              echo "Audit code changed after this build. Skip stale results."
+              exit 0
+            fi
+            git reset --hard origin/main
+            mkdir -p research/bowling_audit/output
+            cp "$SNAP/coverage.json" research/bowling_audit/output/coverage.json
+            cp "$SNAP/coverage.md" research/bowling_audit/output/coverage.md
+            git add research/bowling_audit/output/coverage.json research/bowling_audit/output/coverage.md
+            if git diff --cached --quiet; then
+              echo "No changes to audit results."
+              exit 0
+            fi
+            git commit -m "Research: publish rights-safe bowling data availability audit"
+            if git push origin HEAD:main; then
+              echo "Bowling audit committed without modifying batting app."
+              exit 0
+            fi
+          done
+          exit 1
