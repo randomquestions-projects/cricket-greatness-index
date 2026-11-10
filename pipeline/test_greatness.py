@@ -188,6 +188,28 @@ def _peak(rs,window=25):
             best={"index":v,"start":a[0]["date"],"end":a[-1]["date"],"innings":window}
     return {**best,"index":round(best["index"],1)} if best else None
 
+def _jaws_style(rs):
+    """An exploratory cricket JAWS analogue. NOT baseball WAR.
+
+    Value is context-standardized innings surplus with wicket-survival support.
+    Peak is the sum of the seven highest-value observed calendar seasons
+    (nonconsecutive, as in baseball JAWS), using the SAME units as career value.
+    Unequal historical match opportunities remain a material limitation.
+    """
+    seasons=defaultdict(float)
+    for r in rs:
+        er=max(10.,r["expectedRuns"])
+        score=(r["runs"]-r["expectedRuns"])/er + .35*(r["expectedOuts"]-r["dismissed"])
+        seasons[r["year"]]+=score
+    career=sum(seasons.values())
+    peak_years=sorted(seasons.items(),key=lambda item:item[1],reverse=True)[:7]
+    peak=sum(v for _,v in peak_years)
+    return {"careerValue":round(career,2),"bestSevenSeasonValue":round(peak,2),
+            "jawsStyleValue":round((career+peak)/2,2),
+            "bestSevenSeasons":sorted(y for y,_ in peak_years),
+            "activeSeasons":len(seasons),
+            "jawsUnits":"context-standardized run-surplus equivalents, not WAR"}
+
 def _player_metrics(pid,rs):
     n=len(rs)
     runs=sum(r["runs"] for r in rs)
@@ -201,7 +223,8 @@ def _player_metrics(pid,rs):
     # larger sample size matter. Not fitted to external all-time rankings.
     greatness=100+(quality-100)*(.65+.35*min(n,180)/180)+9*math.asinh((runs-expected)/1400)
     peak=_peak(rs)
-    return {"quality":round(quality,1),"teamCarry":round(carry_index,1) if carry_index else None,
+    jaws=_jaws_style(rs)
+    return {**jaws,"quality":round(quality,1),"teamCarry":round(carry_index,1) if carry_index else None,
             "careerGreatness":round(greatness,1),"peakQuality":peak,
             "innings":n,"matches":len({r["match_id"] for r in rs}),
             "runs":int(runs),"dismissals":int(outs),
@@ -214,10 +237,10 @@ def _player_metrics(pid,rs):
             "peerMatchEvidencePct":round(100*sum(r["matchEvidence"]>.1 for r in rs)/n,1),
             "teamCarryInnings":len(carry)}
 
-def build_from_rows(source_rows, bootstraps=True):
+def build_from_rows(source_rows, bootstraps=True, format_code="test"):
     tests=[]
     for source in source_rows:
-        if source.get("format")!="test":continue
+        if source.get("format")!=format_code:continue
         r=dict(source)
         r["runs"]=int(safe_float(r.get("runs")))
         r["dismissed"]=int(safe_float(r.get("dismissed")))
@@ -227,7 +250,7 @@ def build_from_rows(source_rows, bootstraps=True):
         r["venueClass"]=host_class(r)
         r["player_id"]=str(r.get("player_id") or r["name"]+"|"+r["team"])
         tests.append(r)
-    if not tests:raise ValueError("No Test innings in source records")
+    if not tests:raise ValueError("No "+format_code+" innings in source records")
     annual=defaultdict(lambda:[0.,0.,0.])
     by_player=defaultdict(lambda:[0.,0.,0.])
     by_year_opp=defaultdict(lambda:[0.,0.,0.])
@@ -325,7 +348,7 @@ def build_from_rows(source_rows, bootstraps=True):
             "venues":venue_splits,
             "opponentAndVenue":road_opponent_splits,
             "sensitivity":sens})
-        official=KNOWN_CAREERS.get(name)
+        official=KNOWN_CAREERS.get(name) if format_code=="test" else None
         if official:
             metrics["careerCheck"]={"referenceRuns":official["runs"],
               "referenceInnings":official["innings"],
@@ -346,7 +369,8 @@ def build_from_rows(source_rows, bootstraps=True):
     historic=sum(bool(r.get("scorecardOnly")) for r in tests)
     doc={"generatedUTC":datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "modelVersion":"test-scorecard-common-denominator-v0.3-experimental",
-        "title":"Test Batting Greatness — era, team carry and career/peak",
+        "title":format_code.upper()+" Batting Greatness — era, team carry and career/peak",
+        "format":format_code,
         "certifiedAllTimeRanking":False,
         "scorecardCommonDenominator":True,
         "modernOnlyFeaturesInPrimaryModel":False,
@@ -368,6 +392,7 @@ def build_from_rows(source_rows, bootstraps=True):
            "battingPosition":"NOT controlled: unavailable systematically in historical dataset",
            "seriesContext":"NOT modeled: no consistent historical series identifier",
            "individualBowlers":"NOT controlled in common all-era model: modern-only evidence",
+           "jawsStyle":"Average of career standardized surplus and seven best observed seasonal surplus values; all years use same units; NOT WAR; opportunity bias remains",
            "matchOutcome":"NOT a core feature; historical match outcomes missing from the source"
         },
         "observedTestInnings":len(tests),
