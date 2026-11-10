@@ -4,7 +4,7 @@ from zipfile import ZipFile
 from pipeline.historical import (load_batting,ingest_historical,fmt_name,parse_day,country,batsman)
 from pipeline.ingest import ingest,FILES
 from pipeline.ledger import read_innings
-from pipeline.test_greatness import build_from_rows
+from pipeline.scorecard_model import build_from_rows
 from pipeline.reconcile import reconcile_rows
 from pipeline.audit import audit
 from tests.test_pipeline import example
