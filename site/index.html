@@ -1,37 +1,43 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Cricket Greatness Lab · Independent batting research</title>
-<meta name="description" content="A reproducible, scorecard-level international cricket batting analysis. ODI, Test, T20I, teammate-adjusted, era-aware and transparent about coverage."/>
-<link rel="stylesheet" href="assets/styles.css"/>
-</head><body>
-<div class="layout">
-<aside class="sidebar" id="sidebar">
-  <div class="identity"><div class="logo">CG<span>·</span></div><div><strong>Cricket<br>Greatness Lab</strong><small>AN INDEPENDENT ANALYTICS PROJECT</small></div></div>
-  <div class="sidebar-section">ANALYSIS</div>
-  <nav id="navigation" aria-label="Site navigation">
-    <button onclick="window.location.href='format-greatness.html?format=test'" style="background:#2a735b;color:white"><span>★</span> Test Greatness · v0.4</button>
-    <button data-page="overview"><span>◈</span> Overview</button>
-    <button onclick="window.location.href='format-greatness.html?format=odi'"><span>◐</span> One-Day Internationals</button>
-    <button onclick="window.location.href='format-greatness.html?format=test'"><span>▤</span> Test Cricket</button>
-    <button onclick="window.location.href='format-greatness.html?format=t20i'"><span>◕</span> T20 Internationals</button>
-    <button onclick="window.location.href='format-greatness.html?format=test_odi'"><span>◇</span> Tests + ODIs</button>
-    <button onclick="window.location.href='format-greatness.html?format=all_three'"><span>◆</span> All three formats</button>
-    <button data-page="compare"><span>⇄</span> Batter comparison</button>
-    <button data-page="matches"><span>☷</span> Match explorer</button>
-  </nav>
-  <div class="sidebar-section">RESEARCH</div>
-  <nav id="secondary-nav"><button data-page="methodology"><span>∑</span> Index methodology</button><button data-page="coverage"><span>▧</span> Data & coverage</button></nav>
-  <div class="sidebar-foot"><span class="live-dot"></span><span id="side-status">Checking verified data…</span><a href="https://cricsheet.org/downloads/" target="_blank" rel="noreferrer">Cricsheet data (ODC-BY) ↗</a></div>
-</aside>
-<div class="main-shell">
-<header class="topbar"><button id="menu-button" class="mobile-menu" aria-label="Toggle menu">☰</button><div class="breadcrumbs">RESEARCH / <span id="breadcrumb">OVERVIEW</span></div><div class="top-right"><span class="pill" id="header-status">SOURCE-AUDITED</span><span class="avatar">CG</span></div></header>
-<main id="main-content" tabindex="-1" aria-live="polite">
-<section class="hero"><div class="eyebrow">THE SEARCH FOR CRICKET'S GREATEST BATTER <span class="dash">/</span> 1877 → PRESENT</div><h1 id="page-heading">Who was <em>truly</em> the greatest?</h1><p id="page-description">Beyond runs and averages: compare batters against their own era, the bowlers they faced, the conditions they played in, and the teammates beside them.</p></section>
-<div class="notice ok" style="margin-bottom:10px"><strong>Updated common-era research v0.4:</strong> <a href="format-greatness.html?format=test">Tests</a> · <a href="format-greatness.html?format=odi">ODIs</a> · <a href="format-greatness.html?format=t20i">T20Is</a> · <a href="format-greatness.html?format=test_odi">Tests + ODIs</a> · <a href="format-greatness.html?format=all_three">All three formats</a> — Era-adjusted quality, team carry, peak and JAWS-inspired career measures. Historical source coverage remains unverified.</div>
-<div class="notice" id="data-notice"></div>
-<div id="page-body"></div>
-</main>
-<footer class="footer"><span>CRICKET GREATNESS LAB <span class="dim">/ Independent and reproducible</span></span><span>Modern scores: Cricsheet ODC-BY · historical-era research aggregates: rights unverified</span></footer>
-</div></div>
-<script src="data/bootstrap.js"></script><script src="data/focus.js"></script><script src="assets/app.js"></script>
-</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Cricket Greatness Lab: one transparent scorecard-era analytical model for Test, ODI and T20I batting greatness, team carry, peak and career value.">
+  <title>Cricket Greatness Lab · Independent Batting Research</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#overview" aria-label="Cricket Greatness Lab home"><span class="brand-mark">CG<span>·</span></span><span class="brand-text"><strong>Cricket<br>Greatness Lab</strong><small>INDEPENDENT CRICKET ANALYTICS</small></span></a>
+    <div class="nav-title">ANALYSIS</div>
+    <nav id="navigation" aria-label="Main navigation">
+      <a href="#overview" data-view="overview"><span class="nav-symbol">◈</span> Overview</a>
+      <a href="#test" data-view="test"><span class="nav-symbol">▤</span> Test Cricket</a>
+      <a href="#odi" data-view="odi"><span class="nav-symbol">◐</span> One-Day Internationals</a>
+      <a href="#t20i" data-view="t20i"><span class="nav-symbol">◕</span> T20 Internationals</a>
+      <a href="#test_odi" data-view="test_odi"><span class="nav-symbol">◇</span> Tests + ODIs</a>
+      <a href="#all_three" data-view="all_three"><span class="nav-symbol">◆</span> All Three Formats</a>
+      <a href="#compare" data-view="compare"><span class="nav-symbol">⇄</span> Batter Comparison</a>
+      <a href="#matches" data-view="matches"><span class="nav-symbol">☷</span> Match Explorer</a>
+    </nav>
+    <div class="nav-title">RESEARCH</div>
+    <nav aria-label="Research navigation">
+      <a href="#methodology" data-view="methodology"><span class="nav-symbol">∑</span> Index Methodology</a>
+      <a href="#coverage" data-view="coverage"><span class="nav-symbol">▧</span> Data &amp; Coverage</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="status-dot"></span> <span id="sidebar-status">Loading verified research data…</span><a href="https://randomquestions-projects.github.io/">← All analytics projects</a></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><button type="button" id="menu-button" aria-label="Toggle navigation" aria-expanded="false">☰</button><span>CRICKET GREATNESS LAB / <b id="breadcrumb">OVERVIEW</b></span><span class="topbadge">MODEL v0.4 · EXPERIMENTAL</span></header>
+    <main id="content" tabindex="-1">
+      <div id="page-header" class="hero"><div class="eyebrow">ERA-COMPARABLE BATTING RESEARCH · 1877 → PRESENT</div><h1>Beyond runs and averages.</h1><p>Explore cricket greatness through the same scorecard evidence for every era.</p></div>
+      <div id="research-notice" role="status" class="research-notice">Loading scorecard-era research scores…</div>
+      <div id="page-body"></div>
+    </main>
+    <footer class="footer"><span>CRICKET GREATNESS LAB · RESEARCH v0.4</span><span>Cricsheet open records (ODC-BY) · Historical batting aggregates (reuse rights unverified) · No official all-time certification</span></footer>
+  </div>
+</div>
+<script defer src="assets/app.js"></script>
+</body>
+</html>
