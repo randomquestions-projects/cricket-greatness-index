@@ -9,6 +9,8 @@ on:
       - 'site/data/**'
       - 'pipeline/**'
       - 'tests/**'
+      - 'site/test-greatness.html'
+      - 'site/format-greatness.html'
       - '.github/workflows/check-format-greatness.yml'
 permissions:
   contents: read
@@ -26,6 +28,10 @@ jobs:
           node-version: '22'
       - name: Validate Python source ledger and unified model tests
         run: python -m unittest discover -s tests -v
+      - name: Browser-like smoke test with the real published source JSON
+        run: |
+          npm install --no-save --no-package-lock jsdom@26
+          node tests/site_smoke.mjs
       - name: Validate one-page website and fail if legacy outputs resurface
         run: |
           node --check site/assets/app.js
