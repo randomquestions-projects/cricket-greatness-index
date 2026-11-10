@@ -1,24 +1,24 @@
-# Cricket Greatness Lab · independent source coverage audit
+# Cricket Greatness Lab · source coverage audit
 
-Generated on **2026-11-10T00:11:35+00:00**.
+Generated 2026-11-10T05:19:51+00:00.
 
-**7,165** source delivery matches; **4,371** extra historical scorecard matches.
+**Official all-time completeness: NOT CERTIFIED.** This is a count of observed research records, not official match-by-match validation.
 
-**Combined observed matches:** 11,536 across Tests, ODIs and T20Is; all independently deduplicated by match signature.
+| Format | Modern delivery matches | Historic batting-only matches | Provisional combined total |
+|---|---:|---:|---:|
+| Tests | 899 | 1,728 | 2,627 |
+| ODIs | 2,617 | 2,475 | 5,092 |
+| T20Is | 3,649 | 168 | 3,817 |
 
-**Official all-time completeness: NOT CERTIFIED.** This means the website must not publish a definitive greatest-ever result.
+Historical batting data are derived from a 2017 ESPN research snapshot whose redistribution rights remain unverified.
 
-**Retired-career ICC run-total checks passing:** 5/5. These checks do not certify every match.
+Reference career run checks: 5/5; matching run totals alone does not verify every scorecard.
 
-| Format | Origin | First observed year | Modern delivery matches | Older scorecard matches | Combined matches |
-|---|---:|---:|---:|---:|---:|
-| Tests | 1877 | 1877 | 899 | 1,728 | 2,627 |
-| ODIs | 1971 | 1971 | 2,617 | 2,475 | 5,092 |
-| T20Is | 2005 | 2005 | 3,649 | 168 | 3,817 |
+The new public research model publishes derived player-level metrics only; modern Cricsheet events retain ODC-BY attribution.
 
-## Annual observed match counts (NOT a completeness denominator)
+## Annual observed source matches
 
-| Year | Test modern | Test historical | ODI modern | ODI historical | T20I modern | T20I historical |
+| Year | Tests modern | Tests historic | ODIs modern | ODIs historic | T20Is modern | T20Is historic |
 |---:|---:|---:|---:|---:|---:|---:|
 | 1877 | 0 | 2 | — | — | — | — |
 | 1878 | 0 | 0 | — | — | — | — |
@@ -170,29 +170,3 @@ Generated on **2026-11-10T00:11:35+00:00**.
 | 2024 | 50 | 0 | 89 | 0 | 611 | 0 |
 | 2025 | 40 | 0 | 108 | 0 | 531 | 0 |
 | 2026 | 23 | 0 | 110 | 0 | 538 | 0 |
-
-## Retired-career scoring reconciliation
-
-| Batter | Format | Observed runs | ICC reference runs | Difference | Result |
-|---|---|---:|---:|---:|---|
-| Don Bradman | TEST | 6,996 | 6,996 | +0 | PASS |
-| Viv Richards | TEST | 8,540 | 8,540 | +0 | PASS |
-| Viv Richards | ODI | 6,721 | 6,721 | +0 | PASS |
-| Sachin Tendulkar | TEST | 15,921 | 15,921 | +0 | PASS |
-| Sachin Tendulkar | ODI | 18,426 | 18,426 | +0 | PASS |
-
-## Historical player sensitivity
-
-- Tendulkar (1989 debut) must be evaluated with 1989–2001 ODI scorecards, not only post-2002 deliveries.
-- Richards (1975 ODI debut) and Bradman (1928 Test debut) must not be excluded from any all-era leaderboard.
-- The model now computes a separate common-denominator scorecard-parity index for older and newer batters.
-- Historical source does not provide reliable original batting order, all balls faced, modern opponent-bowler exposure, or complete official-match verification.
-- Pre-2002 record presence is now explicit; source completeness is STILL an open validation step.
-
-## Source hashes
-
-- Cricsheet `tests_male_json.zip`: `2b9a4aa0caa528979d843eada435327912092a67d5321eab4f469681ca1f0dd3`
-- Cricsheet `odis_male_json.zip`: `b3e3c7ce548214f44f30e4d656aa3f82e88664829d1157a4779563856737eeaa`
-- Cricsheet `t20s_male_json.zip`: `102586ea122793aafc645e05d6a598b9fff0746935e39b77f2d6f153bc385086`
-
-Read `docs/sources.md` for provenance and rights. No unlicensed original source ZIP/CSV is shipped.

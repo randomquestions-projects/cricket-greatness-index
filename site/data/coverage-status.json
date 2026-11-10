@@ -1,6 +1,6 @@
 {
-  "calculatedUTC": "2026-11-10T00:11:35+00:00",
-  "scope": "Non-overlapping historical scorecard batting records + Cricsheet international ball-by-ball records; NOT a certified official match census",
+  "calculatedUTC": "2026-11-10T05:19:51+00:00",
+  "scope": "Merged nonoverlapping source batting records; not an independently verified official census",
   "deliveryObservedMatches": 7165,
   "historicalObservedMatches": 4371,
   "totalObservedMatches": 11536,
@@ -8,24 +8,20 @@
   "latestDeliveryDate": "2026-11-02",
   "historicalSourceImported": true,
   "historicalInnings": 103626,
-  "historicalSource": "https://raw.githubusercontent.com/dgolicher/cricket/master/",
+  "historicalSource": "2017 ESPN-derived research snapshot; redistribution rights unverified",
   "historicalCompletenessCertified": false,
   "allTimeRankingPermitted": false,
   "referenceCareerRunsPassing": 5,
   "referenceCareerRunsChecked": 5,
-  "referenceCareerRunsAllMatch": true,
   "historicalIdentityAmbiguities": 16,
   "historicalDuplicatesSuppressed": 54565,
-  "officialCensusReconciliation": "NOT COMPLETED \u2014 no season-by-season official match-ID census",
+  "officialCensusReconciliation": "NOT COMPLETED",
   "notes": [
-    "Positive source-match counts do not establish every official international match was captured.",
-    "Historical scorecard source spans the 1877\u20132017 era when available, but its year-by-year completeness is NOT verified.",
-    "Modern Cricsheet record wins for overlapping entire matches; historic source counts are non-overlapping matches only.",
-    "Historical batting position and balls faced are unavailable for some/all older source rows; never impute them.",
-    "Historical scorecard data is based on publicly posted ESPNcricinfo-derived data; source re-use rights need verification before republication.",
-    "Historical era-parity rankings are NOT equivalent to modern bowler-adjusted quality rankings.",
-    "Compare player career innings totals against authoritative official career stats and investigate discrepancies before all-time conclusions.",
-    "Cricsheet withholds some Afghanistan matches and some other events."
+    "Historical data include batting-only cards, not complete bowling/fielding scorecards.",
+    "No independently verified all-time official match census.",
+    "The source-ledger importer suppresses complete historical matches when a modern Cricsheet match overlaps.",
+    "All three batting formats use the same scorecard-era index model.",
+    "Historical individual source rows are excluded from public site output."
   ],
   "formats": {
     "test": {
