@@ -1,113 +1,101 @@
-"""Independent source coverage audit. Match presence != official completeness."""
-from collections import Counter
+"""Source-ledger coverage audit for the single v0.4 analysis platform.
+
+Computes observed modern/historical match counts directly from the normalized
+innings ledger and the Cricsheet manifest. Never depends on retired legacy
+scorecards or generates unlicensed individual historical records.
+"""
+from __future__ import annotations
+from collections import defaultdict
+from datetime import date,datetime,timezone
 import json
-from datetime import date, datetime, timezone
 from pathlib import Path
 from .ingest import ROOT
+from .ledger import read_innings
 
-FORMAT_START={'test':1877,'odi':1971,'t20i':2005}
-FORMAT_NAMES={'test':'Tests','odi':'ODIs','t20i':'T20Is'}
+FORMAT_START={"test":1877,"odi":1971,"t20i":2005}
+FORMAT_NAMES={"test":"Tests","odi":"ODIs","t20i":"T20Is"}
 
 def audit(root=ROOT):
     root=Path(root)
-    manifest=json.loads((root/'data/generated/manifest.json').read_text())
-    matches=json.loads((root/'data/generated/matches.json').read_text())
-    report=json.loads((root/'site/data/report.json').read_text())
-    if len(matches)!=manifest['matchCount']:
-        raise ValueError('Delivery manifest and unique match rows disagree')
-    if report['metadata'].get('isAllTimeEligible'):
-        raise ValueError('Historical completeness needs independent official match-by-match reconciliation')
-    modern=Counter((m['format'],int(m['year'])) for m in matches)
-    history=Counter()
-    for k,n in report['metadata'].get('historicalMatchesByYear',{}).items():
-        fmt,year=k.split(':');history[(fmt,int(year))]=int(n)
-    latest=max([date.today().year]+[int(m['year']) for m in matches])
+    folder=root/"data/generated"
+    manifest=json.loads((folder/"manifest.json").read_text())
+    matches=json.loads((folder/"matches.json").read_text())
+    if len(matches)!=manifest["matchCount"]:
+        raise ValueError("Cricsheet source manifest and actual match records disagree")
+    rows=read_innings(folder)
+    modern=defaultdict(set);historical=defaultdict(set)
+    for m in matches:
+        modern[(m["format"],int(m["year"]))].add(str(m["id"]) if "id" in m else str(m.get("match_id") or m.get("file") or m))
+    for r in rows:
+        if not r.get("scorecardOnly"):continue
+        historical[(r["format"],int(r["year"]))].add(r["match_id"])
+    end_year=max([date.today().year]+[int(m["year"]) for m in matches])
     formats={}
     for fmt,start in FORMAT_START.items():
-        rows=[]
-        for year in range(start,latest+1):
-            old=history[(fmt,year)];new=modern[(fmt,year)]
-            rows.append({'year':year,'historicalScorecardMatches':old,'deliveryMatches':new,'observedMatches':old+new})
-        observed=[r['year'] for r in rows if r['observedMatches']]
-        formats[fmt]={'firstOfficialYear':start,'firstObservedYear':min(observed) if observed else None,
-                      'lastObservedYear':max(observed) if observed else None,
-                      'observedMatches':sum(x['observedMatches'] for x in rows),
-                      'historicalScorecardMatches':sum(x['historicalScorecardMatches'] for x in rows),
-                      'deliveryMatches':sum(x['deliveryMatches'] for x in rows),
-                      'yearsWithZeroObservedMatches':[x['year'] for x in rows if x['observedMatches']==0],
-                      'yearly':rows,'officialMatchesCoveredPercent':None}
-    hist=report['metadata'].get('hasHistoricalScorecards',False)
-    rec_file=root/'site/data/career-reconciliation.json'
-    career=json.loads(rec_file.read_text()) if rec_file.exists() else {}
-    coverage={'calculatedUTC':datetime.now(timezone.utc).isoformat(timespec='seconds'),
-              'scope':'Non-overlapping historical scorecard batting records + Cricsheet international ball-by-ball records; NOT a certified official match census',
-              'deliveryObservedMatches':manifest['matchCount'],
-              'historicalObservedMatches':report['metadata'].get('historicalDistinctMatchesAfterDedup',0),
-              'totalObservedMatches':sum(x['observedMatches'] for x in formats.values()),
-              'earliestDeliveryDate':manifest['earliestDate'],'latestDeliveryDate':manifest['latestDate'],
-              'historicalSourceImported':hist,'historicalInnings':report['metadata'].get('historicalObservedInnings',0),
-              'historicalSource':report['metadata'].get('historicalSource'),
-              'historicalCompletenessCertified':False,'allTimeRankingPermitted':False,
-              'referenceCareerRunsPassing':career.get('passingCareers',0),
-              'referenceCareerRunsChecked':career.get('checkedCareers',0),
-              'referenceCareerRunsAllMatch':career.get('allReferenceCareerRunTotalsMatch',False),
-              'historicalIdentityAmbiguities':report['metadata'].get('historicalIdentityAmbiguities',0),
-              'historicalDuplicatesSuppressed':report['metadata'].get('historicalOverlapSuppressed',0),
-              'officialCensusReconciliation':'NOT COMPLETED — no season-by-season official match-ID census',
-              'notes':[
-                  'Positive source-match counts do not establish every official international match was captured.',
-                  'Historical scorecard source spans the 1877–2017 era when available, but its year-by-year completeness is NOT verified.',
-                  'Modern Cricsheet record wins for overlapping entire matches; historic source counts are non-overlapping matches only.',
-                  'Historical batting position and balls faced are unavailable for some/all older source rows; never impute them.',
-                  'Historical scorecard data is based on publicly posted ESPNcricinfo-derived data; source re-use rights need verification before republication.',
-                  'Historical era-parity rankings are NOT equivalent to modern bowler-adjusted quality rankings.',
-                  'Compare player career innings totals against authoritative official career stats and investigate discrepancies before all-time conclusions.',
-                  'Cricsheet withholds some Afghanistan matches and some other events.'
-              ],'formats':formats}
-    (root/'site/data').mkdir(parents=True,exist_ok=True)
-    (root/'site/data/coverage-status.json').write_text(json.dumps(coverage,indent=2)+'\n')
-    lines=['# Cricket Greatness Lab · independent source coverage audit','',
-           f"Generated on **{coverage['calculatedUTC']}**.",'',
-           f"**{coverage['deliveryObservedMatches']:,}** source delivery matches; **{coverage['historicalObservedMatches']:,}** extra historical scorecard matches.",'',
-           f"**Combined observed matches:** {coverage['totalObservedMatches']:,} across Tests, ODIs and T20Is; all independently deduplicated by match signature.",'',
-           '**Official all-time completeness: NOT CERTIFIED.** This means the website must not publish a definitive greatest-ever result.','',
-           f"**Retired-career ICC run-total checks passing:** {career.get('passingCareers',0)}/{career.get('checkedCareers',0)}. These checks do not certify every match.",'',
-           '| Format | Origin | First observed year | Modern delivery matches | Older scorecard matches | Combined matches |',
-           '|---|---:|---:|---:|---:|---:|']
-    for fmt,x in formats.items():
-        lines.append(f"| {FORMAT_NAMES[fmt]} | {x['firstOfficialYear']} | {x['firstObservedYear'] or 'none'} | {x['deliveryMatches']:,} | {x['historicalScorecardMatches']:,} | {x['observedMatches']:,} |")
-    lines.extend(['','## Annual observed match counts (NOT a completeness denominator)','',
-                  '| Year | Test modern | Test historical | ODI modern | ODI historical | T20I modern | T20I historical |',
-                  '|---:|---:|---:|---:|---:|---:|---:|'])
-    for yr in range(1877,latest+1):
-        vals=[]
-        for fmt in ('test','odi','t20i'):
-            vals.extend((str(modern[(fmt,yr)]) if yr>=FORMAT_START[fmt] else '—',
-                         str(history[(fmt,yr)]) if yr>=FORMAT_START[fmt] else '—'))
-        lines.append('| '+str(yr)+' | '+' | '.join(vals)+' |')
-    lines.extend(['','## Retired-career scoring reconciliation','',
-                  '| Batter | Format | Observed runs | ICC reference runs | Difference | Result |',
-                  '|---|---|---:|---:|---:|---|'])
-    for c in career.get('checks',[]):
-        lines.append(f"| {c['player']} | {c['format'].upper()} | {c['observedRuns']:,} | {c['referenceRuns']:,} | {c['deltaRuns']:+,} | {'PASS' if c['careerRunsReconciled'] else 'MISSING / DISCREPANCY'} |")
-    lines.extend(['','## Historical player sensitivity','',
-                  '- Tendulkar (1989 debut) must be evaluated with 1989–2001 ODI scorecards, not only post-2002 deliveries.',
-                  '- Richards (1975 ODI debut) and Bradman (1928 Test debut) must not be excluded from any all-era leaderboard.',
-                  '- The model now computes a separate common-denominator scorecard-parity index for older and newer batters.',
-                  '- Historical source does not provide reliable original batting order, all balls faced, modern opponent-bowler exposure, or complete official-match verification.',
-                  '- Pre-2002 record presence is now explicit; source completeness is STILL an open validation step.','',
-                  '## Source hashes',''])
-    for src,digest in manifest['sha256'].items():lines.append(f'- Cricsheet `{src}`: `{digest}`')
-    if manifest.get('historical'):
-        h=manifest['historical'];lines.extend(['',f"- Historical source: {h.get('source','unknown')}",
-                       f"- Historical innings SHA256: `{h.get('sourceSHA256','unknown')}`",
-                       f"- Historical source rights: {h.get('sourceLicense','unknown')}"])
-    lines.extend(['','Read `docs/sources.md` for provenance and rights. No unlicensed original source ZIP/CSV is shipped.'])
-    (root/'data/coverage.md').write_text('\n'.join(lines)+'\n')
+        yearly=[]
+        for year in range(start,end_year+1):
+            old=len(historical[(fmt,year)])
+            new=len(modern[(fmt,year)])
+            yearly.append({"year":year,"historicalScorecardMatches":old,
+                 "deliveryMatches":new,"observedMatches":old+new})
+        observed=[x["year"] for x in yearly if x["observedMatches"]]
+        formats[fmt]={"firstOfficialYear":start,
+          "firstObservedYear":min(observed) if observed else None,
+          "lastObservedYear":max(observed) if observed else None,
+          "observedMatches":sum(x["observedMatches"] for x in yearly),
+          "historicalScorecardMatches":sum(x["historicalScorecardMatches"] for x in yearly),
+          "deliveryMatches":sum(x["deliveryMatches"] for x in yearly),
+          "yearsWithZeroObservedMatches":[x["year"] for x in yearly if x["observedMatches"]==0],
+          "yearly":yearly,"officialMatchesCoveredPercent":None}
+    rec=root/"site/data/career-reconciliation.json"
+    career=json.loads(rec.read_text()) if rec.exists() else {}
+    coverage={"calculatedUTC":datetime.now(timezone.utc).isoformat(timespec="seconds"),
+       "scope":"Merged nonoverlapping source batting records; not an independently verified official census",
+       "deliveryObservedMatches":manifest["matchCount"],
+       "historicalObservedMatches":sum(x["historicalScorecardMatches"] for x in formats.values()),
+       "totalObservedMatches":sum(x["observedMatches"] for x in formats.values()),
+       "earliestDeliveryDate":manifest["earliestDate"],"latestDeliveryDate":manifest["latestDate"],
+       "historicalSourceImported":any(r.get("scorecardOnly") for r in rows),
+       "historicalInnings":sum(bool(r.get("scorecardOnly")) for r in rows),
+       "historicalSource":"2017 ESPN-derived research snapshot; redistribution rights unverified",
+       "historicalCompletenessCertified":False,"allTimeRankingPermitted":False,
+       "referenceCareerRunsPassing":career.get("passingCareers",0),
+       "referenceCareerRunsChecked":career.get("checkedCareers",0),
+       "historicalIdentityAmbiguities":read_innings.last_audit.get("ambiguousIdentityCount",0),
+       "historicalDuplicatesSuppressed":read_innings.last_audit.get("duplicateHistoricalMatchInningsSuppressed",0),
+       "officialCensusReconciliation":"NOT COMPLETED",
+       "notes":["Historical data include batting-only cards, not complete bowling/fielding scorecards.",
+         "No independently verified all-time official match census.",
+         "The source-ledger importer suppresses complete historical matches when a modern Cricsheet match overlaps.",
+         "All three batting formats use the same scorecard-era index model.",
+         "Historical individual source rows are excluded from public site output."],
+       "formats":formats}
+    out=root/"site/data";out.mkdir(parents=True,exist_ok=True)
+    (out/"coverage-status.json").write_text(json.dumps(coverage,indent=2)+"\n")
+    lines=["# Cricket Greatness Lab · source coverage audit","",
+      f"Generated {coverage['calculatedUTC']}.","",
+      "**Official all-time completeness: NOT CERTIFIED.** This is a count of observed research records, not official match-by-match validation.","",
+      "| Format | Modern delivery matches | Historic batting-only matches | Provisional combined total |",
+      "|---|---:|---:|---:|"]
+    for f,x in formats.items():
+        lines.append(f"| {FORMAT_NAMES[f]} | {x['deliveryMatches']:,} | {x['historicalScorecardMatches']:,} | {x['observedMatches']:,} |")
+    lines += ["","Historical batting data are derived from a 2017 ESPN research snapshot whose redistribution rights remain unverified.","",
+      f"Reference career run checks: {career.get('passingCareers',0)}/{career.get('checkedCareers',0)}; matching run totals alone does not verify every scorecard.","",
+      "The new public research model publishes derived player-level metrics only; modern Cricsheet events retain ODC-BY attribution.","",
+      "## Annual observed source matches","",
+      "| Year | Tests modern | Tests historic | ODIs modern | ODIs historic | T20Is modern | T20Is historic |",
+      "|---:|---:|---:|---:|---:|---:|---:|"]
+    for yr in range(1877,end_year+1):
+        values=[]
+        for f in FORMAT_START:
+            if yr<FORMAT_START[f]:values.extend(["—","—"])
+            else:values.extend([str(len(modern[(f,yr)])),str(len(historical[(f,yr)]))])
+        lines.append("| "+str(yr)+" | "+" | ".join(values)+" |")
+    doc=root/"data/coverage.md";doc.parent.mkdir(parents=True,exist_ok=True);doc.write_text("\n".join(lines)+"\n")
     return coverage
 
 def main():
     c=audit()
-    print('Coverage audit:',c['totalObservedMatches'],'combined observed games; historical certified:',c['historicalCompletenessCertified'])
+    print("Coverage audit:",c["totalObservedMatches"],"source matches; certified:",c["historicalCompletenessCertified"])
 
-if __name__=='__main__':main()
+if __name__=="__main__":main()
