@@ -20,4 +20,4 @@ The prior modern-only v0.2 ranking algorithm is **retired** from the website and
 
 Not independently certified historical scorecard completeness; older individual bowling attacks and measurable pitches are not available for all eras. The ESPN-derived 2017 historical batting source has unverified redistribution rights; only derived aggregate player model scores are published in the new app. The JAWS analogue is not WAR and is opportunity-biased across eras.
 
-[Source coverage and data rights](../warehouse/SCORECARD_STATUS.md) · [Working website](../site/index.html) · [Shared model implementation](../pipeline/test_greatness.py)
+[Source coverage and data rights](../warehouse/SCORECARD_STATUS.md) · [Working website](../site/index.html) · [Shared model implementation](../pipeline/scorecard_model.py)
