@@ -84,7 +84,7 @@ def build(input_dir=ROOT/"data/generated", output_dir=ROOT/"site/data", bootstra
     rows=read_innings(Path(input_dir))
     reports={}
     for f in FORMATS:
-        r=build_from_rows(rows,bootstraps=bootstrap,format_code=f)
+        r=build_from_rows(rows,bootstraps=bootstrap,format_code=f,minimum_innings=MINIMUM[f])
         r["modelVersion"]="scorecard-common-denominator-v0.4-jaws-experimental"
         r["format"]=f
         r["qualificationMinimumInnings"]=MINIMUM[f]
