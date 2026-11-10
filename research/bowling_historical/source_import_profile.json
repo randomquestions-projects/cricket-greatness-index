@@ -1,0 +1,190 @@
+{
+  "generatedUTC": "2026-11-10T02:47:47+00:00",
+  "sources": {
+    "philipson_test": {
+      "url": "https://raw.githubusercontent.com/petephilipson/MPCMP_Test_bowlers/main/bowldat2022_Toss.RData",
+      "sizeBytes": 807759,
+      "sha256": "9451f9cb30ed4bd99d67f03ad89fcf752726f897ef89bf779320c8aaca219bb4",
+      "objects": [
+        {
+          "object": "bowldat2022_Toss",
+          "rows": 47610,
+          "columns": [
+            "ID",
+            "Player",
+            "Country",
+            "Runs",
+            "Wkts",
+            "Inns",
+            "Opposition",
+            "Age",
+            "Days",
+            "Year",
+            "HA",
+            "Toss",
+            "Style",
+            "Arm",
+            "BirthY",
+            "Balls",
+            "Ground",
+            "Overs",
+            "BPO",
+            "Mdns",
+            "Econ"
+          ],
+          "yearColumnCandidate": "Year"
+        }
+      ]
+    },
+    "golicher_2017": {
+      "url": "https://raw.githubusercontent.com/dgolicher/crickdata/master/data/bowling.rda",
+      "sizeBytes": 20672314,
+      "sha256": "88442e8a44672f7e3580557f209f515b04b63f2625b808e0b033ff9fb9f2fc4e",
+      "objects": [
+        {
+          "object": "bowling",
+          "rows": 190444,
+          "columns": [
+            "Player",
+            "Overs",
+            "BPO",
+            "Mdns",
+            "Runs",
+            "Wkts",
+            "Econ",
+            "Inns",
+            "Opposition",
+            "Ground",
+            "Country",
+            "Date",
+            "Year",
+            "Day",
+            "Month",
+            "Yday",
+            "type"
+          ],
+          "yearColumnCandidate": "Date"
+        }
+      ]
+    },
+    "hf_test_bowling": {
+      "url": "https://huggingface.co/datasets/bhuvaneshprasad/test-cricket-dataset-1877-2014/resolve/main/test_Bowling_Card.csv",
+      "sizeBytes": 3192655,
+      "sha256": "0ad4e04455d317086c646ff6c94d528bc2faa1499f03f53976afb067c0bc3709",
+      "objects": [
+        {
+          "object": "csv",
+          "rows": 48774,
+          "columns": [
+            "Match ID",
+            "innings",
+            "team",
+            "opposition",
+            "bowler id",
+            "overs",
+            "balls",
+            "maidens",
+            "conceded",
+            "wickets",
+            "economy",
+            "dots",
+            "fours",
+            "sixes",
+            "wides",
+            "noballs"
+          ],
+          "yearColumnCandidate": null
+        }
+      ]
+    },
+    "hf_test_matches": {
+      "url": "https://huggingface.co/datasets/bhuvaneshprasad/test-cricket-dataset-1877-2014/resolve/main/test_Matches_Data.csv",
+      "sizeBytes": 1300991,
+      "sha256": "3b8f6afe5fdd5af3d1f5c8b3ef4787543dd20d5fab7a4773d97c891b33f40030",
+      "objects": [
+        {
+          "object": "csv",
+          "rows": 2520,
+          "columns": [
+            "TEST Match No",
+            "Match ID",
+            "Match Name",
+            "Series ID",
+            "Series Name",
+            "Match Start Date",
+            "Match End Date",
+            "Match Format",
+            "Team1 ID",
+            "Team1 Name",
+            "Team1 Captain",
+            "Innings1 Team1 Runs Scored",
+            "Innings1 Team1 Wickets Fell",
+            "Innings1 Team1 Extras Rec",
+            "Innings2 Team1 Runs Scored",
+            "Innings2 Team1 Wickets Fell",
+            "Innings2 Team1 Extras Rec",
+            "Team2 ID",
+            "Team2 Name",
+            "Team2 Captain",
+            "Innings1 Team2 Runs Scored",
+            "Innings1 Team2 Wickets Fell",
+            "Innings1 Team2 Extras Rec",
+            "Innings2 Team2 Runs Scored",
+            "Innings2 Team2 Wickets Fell",
+            "Innings2 Team2 Extras Rec",
+            "Match Venue (Stadium)",
+            "Match Venue (City)",
+            "Match Venue (Country)",
+            "Umpire 1",
+            "Umpire 2",
+            "Match Referee",
+            "Toss Winner",
+            "Toss Winner Choice",
+            "Match Winner",
+            "Match Result Text",
+            "MOM Player",
+            "Team1 Playing 11",
+            "Team2 Playing 11",
+            "Debut Players"
+          ],
+          "yearColumnCandidate": "Match Start Date"
+        }
+      ]
+    },
+    "hf_test_players": {
+      "url": "https://huggingface.co/datasets/bhuvaneshprasad/test-cricket-dataset-1877-2014/resolve/main/players_info.csv",
+      "sizeBytes": 2026900,
+      "sha256": "6b662b39f5ba611630c46afc5594be852510641ad1ce714dbb47c518801c5259",
+      "objects": [
+        {
+          "object": "csv",
+          "rows": 6707,
+          "columns": [
+            "player_id",
+            "player_object_id",
+            "player_name",
+            "dob",
+            "dod",
+            "gender",
+            "batting_style",
+            "bowling_style",
+            "country_id",
+            "image_url",
+            "image_metadata"
+          ],
+          "yearColumnCandidate": null
+        }
+      ]
+    }
+  },
+  "privateTemporarySQLiteCreated": true,
+  "historicalRawRowsPublished": false,
+  "dataReuseRightsUnverified": true,
+  "publicBattingAppModified": false,
+  "notes": [
+    "Only temporary CI validation. No historical source rows committed or uploaded.",
+    "Raw source output is deleted at end of runner job.",
+    "Local persistent private warehouse builder is distributed separately."
+  ],
+  "totalBowlingRowsAcrossSources": 286828
+}
