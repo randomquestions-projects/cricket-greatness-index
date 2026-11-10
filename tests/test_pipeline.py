@@ -1,7 +1,7 @@
 import gzip,json,pathlib,tempfile,unittest
 from zipfile import ZipFile
 from pipeline.ingest import parse_match,ingest,FILES
-from pipeline.model import build, model, summarize
+from pipeline.publication import publish
 from pipeline.audit import audit
 
 def example(fmt):
@@ -50,11 +50,12 @@ class PipelineTests(unittest.TestCase):
       data=base/'data'/'generated';manifest=ingest(raw,data)
       self.assertEqual(manifest['matchCount'],96)
       self.assertGreater(manifest['playerCount'],0)
-      site=base/'site'/'data';report=build(data,site)
-      self.assertTrue((site/'report.json').exists())
-      self.assertIn('odi',report['rankings'])
-      self.assertGreaterEqual(len(report['rankings']['odi']),1)
-      self.assertTrue((site/'focus-innings.json').exists())
+      site=base/'site'/'data'
+      count=publish(data/'innings.csv.gz',site/'innings.json.gz')
+      self.assertGreater(count,0)
+      self.assertTrue((site/'innings.json.gz').exists())
+      self.assertFalse((site/'report.json').exists())
+      self.assertFalse((site/'bootstrap.js').exists())
       # The coverage audit must expose missing historical decades, not certify all-time.
       coverage=audit(base)
       self.assertFalse(coverage['historicalCompletenessCertified'])
