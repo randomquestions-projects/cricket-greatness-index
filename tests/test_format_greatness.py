@@ -47,4 +47,31 @@ class FormatGreatnessTests(unittest.TestCase):
             self.assertTrue(all(p["name"].startswith(f) for p in result["players"]))
             self.assertTrue(all(p["jawsUnits"].endswith("not WAR") for p in result["players"]))
 
+
+    def test_tied_scores_receive_identical_midranks(self):
+        tied=[
+            {"playerId":"first","quality":90.0},
+            {"playerId":"second","quality":90.0},
+            {"playerId":"third","quality":120.0},
+            {"playerId":"missing","quality":None},
+            {"playerId":"invalid","quality":float("nan")},
+        ]
+        ranks=percentiles(tied,"quality")
+        self.assertEqual(ranks,{"first":33.33,"second":33.33,"third":83.33})
+        self.assertEqual(percentiles(list(reversed(tied)),"quality"),ranks)
+
+    def test_duplicate_cross_format_identity_fails_instead_of_overwriting(self):
+        reports={f:{"players":[]} for f in ("test","odi","t20i")}
+        same=self.fake("Duplicate Name","India","test")
+        reports["test"]["players"]=[same,{**same,"playerId":"other-id"}]
+        with self.assertRaisesRegex(ValueError,"Ambiguous cross-format identity"):
+            combined(reports)
+
+    def test_duplicate_metric_player_id_fails_instead_of_overwriting(self):
+        with self.assertRaisesRegex(ValueError,"Duplicate player ID"):
+            percentiles([
+                {"playerId":"same","quality":90},
+                {"playerId":"same","quality":110},
+            ],"quality")
+
 if __name__=="__main__":unittest.main()
