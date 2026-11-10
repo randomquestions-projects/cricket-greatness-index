@@ -7,6 +7,8 @@ on:
       - 'research/bowling_enrichment/build.py'
       - 'research/bowling_enrichment/test_build.py'
       - 'research/bowling_enrichment/measure.py'
+      - 'research/bowling_enrichment/venue_candidates.py'
+      - 'research/bowling_enrichment/test_venue_candidates.py'
       - '.github/workflows/bowling-reference-enrichment.yml'
 permissions:
   contents: write
@@ -23,7 +25,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Unit tests for exact-ID joins and ambiguous unknowns
-        run: python -m unittest research.bowling_enrichment.test_build -v
+        run: python -m unittest research.bowling_enrichment.test_build research.bowling_enrichment.test_venue_candidates -v
       - name: Retrieve openly licensed Cricsheet registers and CC0 Wikidata fields
         run: |
           python -m research.bowling_enrichment.build \
@@ -73,11 +75,27 @@ jobs:
             assert j['coverage'][f]['bowlingInnings']>10000
           print('Observed source-reference coverage:',j['coverage'])
           PY
+      - name: Generate review-only CC0 venue name candidates
+        run: |
+          python -m research.bowling_enrichment.venue_candidates \
+            --references research/bowling_enrichment/output \
+            --output research/bowling_enrichment/output \
+            --batch-size 25
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('research/bowling_enrichment/output/candidate_audit.json')
+          r=json.loads(p.read_text())
+          assert r['verifiedCountryJoinUpdated'] is False
+          assert r['modelFeedsAllowed'] is False
+          assert r['historicalMatchDataImported'] is False
+          print('Review-only venue name candidates:',r['status'])
+          PY
       - name: Save only cleared bowling references in reusable warehouse
         run: |
           set -euo pipefail
           mkdir -p warehouse/exports/bowling_open_enrichment
-          for f in player_bowling_style.csv venue_physical_country.csv player_aliases.csv venue_aliases.csv provenance.json observed_coverage.json; do
+          for f in player_bowling_style.csv venue_physical_country.csv player_aliases.csv venue_aliases.csv provenance.json observed_coverage.json venue_country_candidates_REVIEW_ONLY.csv candidate_audit.json; do
             cp "research/bowling_enrichment/output/$f" "warehouse/exports/bowling_open_enrichment/$f"
           done
           SNAP="$(mktemp -d)"
