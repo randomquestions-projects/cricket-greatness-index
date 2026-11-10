@@ -237,7 +237,7 @@ def _player_metrics(pid,rs):
             "peerMatchEvidencePct":round(100*sum(r["matchEvidence"]>.1 for r in rs)/n,1),
             "teamCarryInnings":len(carry)}
 
-def build_from_rows(source_rows, bootstraps=True, format_code="test"):
+def build_from_rows(source_rows, bootstraps=True, format_code="test", minimum_innings=None):
     tests=[]
     for source in source_rows:
         if source.get("format")!=format_code:continue
@@ -297,8 +297,9 @@ def build_from_rows(source_rows, bootstraps=True, format_code="test"):
             others=(total-r["runs"])/(len(rows)-1)
             r["carryLog"]=math.log((r["runs"]+10)/(others+10))
     players=[]
+    minimum=MIN_INNINGS if minimum_innings is None else minimum_innings
     for pid,rs in player_rows.items():
-        if len(rs)<MIN_INNINGS:continue
+        if len(rs)<minimum:continue
         metrics=_player_metrics(pid,rs)
         name=Counter(r["name"] for r in rs).most_common(1)[0][0]
         team=Counter(r["team"] for r in rs).most_common(1)[0][0]
@@ -368,13 +369,13 @@ def build_from_rows(source_rows, bootstraps=True, format_code="test"):
         if matches:focus.append(matches[0]["playerId"])
     historic=sum(bool(r.get("scorecardOnly")) for r in tests)
     doc={"generatedUTC":datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "modelVersion":"test-scorecard-common-denominator-v0.3-experimental",
+        "modelVersion":"scorecard-common-denominator-v0.4-experimental",
         "title":format_code.upper()+" Batting Greatness — era, team carry and career/peak",
         "format":format_code,
         "certifiedAllTimeRanking":False,
         "scorecardCommonDenominator":True,
         "modernOnlyFeaturesInPrimaryModel":False,
-        "sourceScope":"Existing research-only historical innings plus Cricsheet Test match scorecards.",
+        "sourceScope":"Existing historical batting research snapshot plus Cricsheet international scorecards, scoped to "+format_code+".",
         "historicalSourceRights":"Historical innings originate in ESPN-derived 2017 snapshot; independent redistribution permission NOT verified.",
         "publicationPolicy":"Only aggregate player-level analytic scores and grouped nation/venue metrics. No historical source match/innings records.",
         "historicalRawRowsRedistributed":False,
@@ -383,7 +384,7 @@ def build_from_rows(source_rows, bootstraps=True, format_code="test"):
            "quality":"72% log era/match/opposition/venue-adjusted run production + 28% log dismissal survival; n/(n+35) shrinkage",
            "teamCarry":"Within each innings, run production vs mean teammate runs; equal innings, 20-innings reliability shrinkage",
            "careerGreatness":"Quality premium with sample size + cumulative contextual runs above expected; researcher-defined, not trained",
-           "peak":"Best rolling 25-Test-innings same-scorecard quality, no sample-size shrinkage; selection bias acknowledged",
+           "peak":"Best rolling 25-innings same-format scorecard quality, no sample-size shrinkage; selection bias acknowledged",
            "era":"Leave-batter-out nearby-year reference (2–30-year adaptive windows)",
            "opposition":"Other batters' runs per appearance vs opponent in ±5 years, excluding rated batter's entire career and evaluated match; shrunken proxy, not individual bowler strength",
            "homeAway":"Observed home/away scoring factor by nearby-year peers; unknown venues unadjusted",
