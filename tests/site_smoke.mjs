@@ -44,7 +44,7 @@ assert.ok(w.document.querySelector('.player-grid .player-card'),'comparison is m
 await route('methodology');
 assert.match(w.document.querySelector('#page-body').textContent,/JAWS-inspired career vs peak/);
 await route('coverage');
-assert.match(w.document.querySelector('#page-body').textContent,/Historical batting/i);
+assert.match(w.document.querySelector('#page-body').textContent,/Historic batting-only matches/i);
 await route('matches');
 await settle();
 assert.ok(w.document.querySelector('#match-results').textContent.length>30,'modern explorer blank');
