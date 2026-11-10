@@ -20,9 +20,31 @@ COMBINATIONS={"test_odi":("test","odi"),"all_three":FORMATS}
 MINIMUM={"test":35,"odi":35,"t20i":25}
 
 def percentiles(players,metric):
-    eligible=sorted((p for p in players if p.get(metric) is not None),key=lambda p:p[metric])
+    """Use midranks: equal metric values must receive equal percentile ranks.
+
+    Exclude missing/non-finite values rather than relying on unstable ordering.
+    Fail closed on duplicate player IDs in the same metric pool.
+    """
+    eligible=sorted(
+        (p for p in players if isinstance(p.get(metric),(int,float))
+         and math.isfinite(p[metric])),
+        key=lambda p:p[metric],
+    )
+    result={}
     n=len(eligible)
-    return {p["playerId"]:round(100*(i+.5)/n,2) for i,p in enumerate(eligible)} if n else {}
+    i=0
+    while i<n:
+        j=i+1
+        while j<n and eligible[j][metric]==eligible[i][metric]:
+            j+=1
+        percentile=round(100*(i+j)/(2*n),2)
+        for p in eligible[i:j]:
+            pid=p["playerId"]
+            if pid in result:
+                raise ValueError(f"Duplicate player ID in {metric} percentile pool: {pid}")
+            result[pid]=percentile
+        i=j
+    return result
 
 def _identity(player):
     # A conservatively qualified identity: player display name + team.
@@ -43,7 +65,13 @@ def combined(reports):
     for f in FORMATS:
         for p in reports[f]["players"]:
             if p["innings"]>=MINIMUM[f]:
-                groups[_identity(p)][f]=p
+                ident=_identity(p)
+                if f in groups[ident]:
+                    raise ValueError(
+                        f"Ambiguous cross-format identity in {f}: {p['name']} / {p['team']}; "
+                        "resolve duplicate source identities before ranking"
+                    )
+                groups[ident][f]=p
     result={}
     for key,formats in COMBINATIONS.items():
         rankings=[]
