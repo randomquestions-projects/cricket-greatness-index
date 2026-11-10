@@ -6,6 +6,12 @@ on:
     paths:
       - 'site/**'
       - '.github/workflows/pages.yml'
+  # GitHub Actions commits made with GITHUB_TOKEN do not trigger push
+  # workflows. Re-deploy the freshly committed derived data after its
+  # source/model validation job completes successfully.
+  workflow_run:
+    workflows: ['Refresh international cricket records']
+    types: [completed]
 permissions:
   contents: read
   pages: write
@@ -15,12 +21,16 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
+    # Only publish trusted successful refreshes from this repository's main.
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'main') }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
