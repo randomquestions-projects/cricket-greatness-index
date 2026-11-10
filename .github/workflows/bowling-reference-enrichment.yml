@@ -6,6 +6,7 @@ on:
     paths:
       - 'research/bowling_enrichment/build.py'
       - 'research/bowling_enrichment/test_build.py'
+      - 'research/bowling_enrichment/measure.py'
       - '.github/workflows/bowling-reference-enrichment.yml'
 permissions:
   contents: write
@@ -46,11 +47,37 @@ jobs:
             print('Important partial-coverage warnings:',m['errors'])
           PY
           git diff --exit-code -- site pipeline .github/workflows/refresh-data.yml
+      - name: Download released licensed male scorecards to measure useful coverage
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/bowling-licensed-shards
+          TAG="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName,publishedAt --jq '[.[] | select(.tagName | startswith("cricket-scorecards-source-"))] | sort_by(.publishedAt) | reverse | .[0].tagName')"
+          test -n "$TAG" && test "$TAG" != null
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern 'scorecards_male_*.sqlite.gz' --dir /tmp/bowling-licensed-shards
+          test "$(ls /tmp/bowling-licensed-shards/scorecards_male_*.sqlite.gz | wc -l)" -eq 3
+      - name: Measure pace-spin and physical country coverage in observed Test ODI T20I
+        run: |
+          python -m research.bowling_enrichment.measure \
+            --shards /tmp/bowling-licensed-shards/scorecards_male_*.sqlite.gz \
+            --references research/bowling_enrichment/output \
+            --output research/bowling_enrichment/output/observed_coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('research/bowling_enrichment/output/observed_coverage.json').read_text())
+          assert not j['historicalScorecardsImported']
+          assert not j['battingAppChanged']
+          for f in ('test','odi','t20i'):
+            assert j['coverage'][f]['matches']>800
+            assert j['coverage'][f]['bowlingInnings']>10000
+          print('Observed source-reference coverage:',j['coverage'])
+          PY
       - name: Save only cleared bowling references in reusable warehouse
         run: |
           set -euo pipefail
           mkdir -p warehouse/exports/bowling_open_enrichment
-          for f in player_bowling_style.csv venue_physical_country.csv player_aliases.csv venue_aliases.csv provenance.json; do
+          for f in player_bowling_style.csv venue_physical_country.csv player_aliases.csv venue_aliases.csv provenance.json observed_coverage.json; do
             cp "research/bowling_enrichment/output/$f" "warehouse/exports/bowling_open_enrichment/$f"
           done
           SNAP="$(mktemp -d)"
