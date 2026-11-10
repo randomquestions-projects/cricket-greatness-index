@@ -9,13 +9,13 @@
   <div class="identity"><div class="logo">CG<span>·</span></div><div><strong>Cricket<br>Greatness Lab</strong><small>AN INDEPENDENT ANALYTICS PROJECT</small></div></div>
   <div class="sidebar-section">ANALYSIS</div>
   <nav id="navigation" aria-label="Site navigation">
-    <button onclick="window.location.href='test-greatness.html'" style="background:#2a735b;color:white"><span>★</span> Test Greatness · New</button>
+    <button onclick="window.location.href='format-greatness.html?format=test'" style="background:#2a735b;color:white"><span>★</span> Test Greatness · v0.4</button>
     <button data-page="overview"><span>◈</span> Overview</button>
-    <button data-page="odi"><span>◐</span> One-Day Internationals</button>
-    <button data-page="test"><span>▤</span> Test Cricket · Legacy metric</button>
-    <button data-page="t20i"><span>◕</span> T20 Internationals</button>
-    <button data-page="test_odi"><span>◇</span> Tests + ODIs</button>
-    <button data-page="all_three"><span>◆</span> All three formats</button>
+    <button onclick="window.location.href='format-greatness.html?format=odi'"><span>◐</span> One-Day Internationals</button>
+    <button onclick="window.location.href=&#39;format-greatness.html?format=test'"><span>▤</span> Test Cricket</button>
+    <button onclick="window.location.href=&#39;format-greatness.html?format=t20i'"><span>◕</span> T20 Internationals</button>
+    <button onclick="window.location.href=&#39;format-greatness.html?format=test_odi'"><span>◇</span> Tests + ODIs</button>
+    <button onclick="window.location.href=&#39;format-greatness.html?format=all_three'"><span>◆</span> All three formats</button>
     <button data-page="compare"><span>⇄</span> Batter comparison</button>
     <button data-page="matches"><span>☷</span> Match explorer</button>
   </nav>
@@ -27,7 +27,7 @@
 <header class="topbar"><button id="menu-button" class="mobile-menu" aria-label="Toggle menu">☰</button><div class="breadcrumbs">RESEARCH / <span id="breadcrumb">OVERVIEW</span></div><div class="top-right"><span class="pill" id="header-status">SOURCE-AUDITED</span><span class="avatar">CG</span></div></header>
 <main id="main-content" tabindex="-1" aria-live="polite">
 <section class="hero"><div class="eyebrow">THE SEARCH FOR CRICKET'S GREATEST BATTER <span class="dash">/</span> 1877 → PRESENT</div><h1 id="page-heading">Who was <em>truly</em> the greatest?</h1><p id="page-description">Beyond runs and averages: compare batters against their own era, the bowlers they faced, the conditions they played in, and the teammates beside them.</p></section>
-<div class="notice ok" style="margin-bottom:10px"><strong>New research model:</strong> <a href="test-greatness.html" style="font-weight:800">Test Batting Greatness · era / team carry / peak & career →</a> — Same historical scorecard inputs for Bradman, Kohli, Tendulkar and other generations. Experimental, with uncertainty and clear caveats.</div>
+<div class="notice ok" style="margin-bottom:10px"><strong>Updated common-era research v0.4:</strong> <a href="format-greatness.html?format=test">Tests</a> · <a href="format-greatness.html?format=odi">ODIs</a> · <a href="format-greatness.html?format=t20i">T20Is</a> · <a href="format-greatness.html?format=test_odi">Tests + ODIs</a> · <a href="format-greatness.html?format=all_three">All three formats</a> — Era-adjusted quality, team carry, peak and JAWS-inspired career measures. Historical source coverage remains unverified.</div>
 <div class="notice" id="data-notice"></div>
 <div id="page-body"></div>
 </main>
