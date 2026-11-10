@@ -1,0 +1,22 @@
+{
+  "status": {
+    "no_candidate": 492,
+    "already_verified_by_espn_id": 4,
+    "single_exact_label_candidate_review": 82,
+    "multiple_countries_ambiguous": 9,
+    "multiple_grounds_same_country_review": 4
+  },
+  "queriedNames": 885,
+  "queriedNamesMatched": 96,
+  "lookupErrors": [],
+  "rights": "Wikidata CC0 only; Cricsheet ODC-BY 1.0",
+  "verifiedCountryJoinUpdated": false,
+  "historicalMatchDataImported": false,
+  "modelFeedsAllowed": false,
+  "notes": [
+    "Exact string matches are review candidates, NOT verified identifications.",
+    "Match location physical country is distinct from the cricket host nation.",
+    "Ambiguous names/countries remain unresolved.",
+    "No inference from venue name geographic substrings."
+  ]
+}
