@@ -1,0 +1,58 @@
+{
+  "scope": "Men's Cricsheet-observed Test, ODI, T20I bowling only",
+  "rights": "Cricsheet ODC-BY 1.0; Wikidata CC0 style/country claims",
+  "coverage": {
+    "test": {
+      "bowlingInnings": 17708,
+      "unclassifiedBowlingInnings": 15497,
+      "classifiedBowlingInnings": 2211,
+      "spinBowlingInnings": 2143,
+      "matches": 899,
+      "venueIdentifiedByUniqueName": 893,
+      "venueKnownIdentifierCountryMissingMatches": 851,
+      "venueNoIdentifierMatch": 6,
+      "venuePhysicalCountryVerifiedMatches": 42,
+      "paceBowlingInnings": 68,
+      "uniqueObservedBowlers": 793,
+      "uniqueBowlersWithLicensedPaceSpin": 90,
+      "classifiedBowlingInningsPercent": 12.49,
+      "verifiedPhysicalCountryMatchesPercent": 4.67
+    },
+    "odi": {
+      "bowlingInnings": 31380,
+      "unclassifiedBowlingInnings": 27822,
+      "classifiedBowlingInnings": 3558,
+      "spinBowlingInnings": 3355,
+      "paceBowlingInnings": 203,
+      "matches": 2617,
+      "venueIdentifiedByUniqueName": 2604,
+      "venueKnownIdentifierCountryMissingMatches": 2564,
+      "venueNoIdentifierMatch": 13,
+      "venuePhysicalCountryVerifiedMatches": 40,
+      "uniqueObservedBowlers": 1503,
+      "uniqueBowlersWithLicensedPaceSpin": 132,
+      "classifiedBowlingInningsPercent": 11.34,
+      "verifiedPhysicalCountryMatchesPercent": 1.53
+    },
+    "t20i": {
+      "bowlingInnings": 43274,
+      "unclassifiedBowlingInnings": 40942,
+      "classifiedBowlingInnings": 2332,
+      "spinBowlingInnings": 2054,
+      "paceBowlingInnings": 278,
+      "matches": 3649,
+      "venueIdentifiedByUniqueName": 3623,
+      "venueKnownIdentifierCountryMissingMatches": 3580,
+      "venuePhysicalCountryVerifiedMatches": 43,
+      "venueNoIdentifierMatch": 26,
+      "uniqueObservedBowlers": 3333,
+      "uniqueBowlersWithLicensedPaceSpin": 116,
+      "classifiedBowlingInningsPercent": 5.39,
+      "verifiedPhysicalCountryMatchesPercent": 1.18
+    }
+  },
+  "venueIdentityRule": "Unique exact Cricsheet venue register name/alias only; ambiguous names not joined.",
+  "interpretation": "Pace/spin and physical-country matches are SOURCE coverage, not completeness. Physical country does not imply cricket host country.",
+  "historicalScorecardsImported": false,
+  "battingAppChanged": false
+}
