@@ -1,7 +1,7 @@
 """Synthetic equality/eligibility checks for ODI T20I and JAWS-inspired composite."""
 import unittest
 from pipeline.format_greatness import combined, percentiles
-from pipeline.test_greatness import build_from_rows, _jaws_style
+from pipeline.scorecard_model import build_from_rows, _jaws_style
 
 class FormatGreatnessTests(unittest.TestCase):
     def test_nonconsecutive_best_seven_calendar_seasons(self):
