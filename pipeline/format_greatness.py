@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .ingest import ROOT
 from .ledger import read_innings
-from .test_greatness import build_from_rows
+from .scorecard_model import build_from_rows
 
 FORMATS=("test","odi","t20i")
 COMBINATIONS={"test_odi":("test","odi"),"all_three":FORMATS}
@@ -108,8 +108,8 @@ def build(input_dir=ROOT/"data/generated", output_dir=ROOT/"site/data", bootstra
              "eligibility":"Must meet minimum observed innings in every included format. Does not impute unplayed formats; pre-T20I stars absent from all-three ranking.",
              "careerScoring":"Longevity inherently rewarded. Short peak versus long career is shown separately.",
              "dataCaveat":"Historical source completeness, competition diversity, batting order and measured pitch remain unverified."
-          },"formats":{f:{"qualifiedPlayers":r["qualifiedPlayers"],"observedInnings":r["observedTestInnings"],
-                           "historicInnings":r["historicalTestInnings"]} for f,r in reports.items()},
+          },"formats":{f:{"qualifiedPlayers":r["qualifiedPlayers"],"observedInnings":r["observedInnings"],
+                           "historicInnings":r["historicalInnings"]} for f,r in reports.items()},
           "combined":combos}
     (output_dir/"greatness-combined.json").write_text(json.dumps(meta,separators=(",",":"),ensure_ascii=False)+"\n")
     return meta
