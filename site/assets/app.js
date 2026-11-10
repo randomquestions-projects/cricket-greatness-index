@@ -179,15 +179,33 @@ function matchExplorer(){
  '<label>Opposition<input id="match-opponent" placeholder="Any opponent" value="'+E(state.matchOpposition)+'"></label>'+
  '<label>Sort<select id="match-sort"><option value="date"'+(state.matchOrder==='date'?' selected':'')+'>Most recent</option><option value="runs"'+(state.matchOrder==='runs'?' selected':'')+'>Most runs</option></select></label></div><div id="match-results" class="section"><div class="panel">Loading licensed modern records…</div></div>';
 }
+function renderMatchDetail(inningsId,playerId){
+ const area=$('#match-detail');
+ if(!area||!modernInnings)return;
+ const innings=modernInnings.filter(r=>r.i===inningsId);
+ const selected=innings.find(r=>r.p===playerId);
+ if(!selected){area.innerHTML='';return}
+ const team=innings.filter(r=>r.t===selected.t);
+ const other=team.filter(r=>r.p!==selected.p);
+ const teamRecorded=team.reduce((sum,r)=>sum+r.r,0);
+ const otherTotal=other.reduce((sum,r)=>sum+r.r,0);
+ const otherAverage=other.length?otherTotal/other.length:null;
+ area.innerHTML='<div class="panel" style="margin:16px 0"><div class="section-head"><h2>'+E(selected.n)+' · '+I(selected.r)+' runs</h2><button type="button" data-match-close class="text-link">Close ×</button></div>'+
+ '<p class="note">'+E(selected.d)+' · '+E(selected.f.toUpperCase())+' · '+E(selected.t)+' vs '+E(selected.o)+' · Same-team recorded innings only</p>'+
+ '<div class="mini-stats">'+[['Batter runs',I(selected.r)],['Other recorded batter mean',N(otherAverage)],['Share of recorded bat runs',teamRecorded?N(100*selected.r/teamRecorded)+'%':'—'],['Other batters recorded',I(other.length)]].map(([label,value])=>'<div><small>'+E(label)+'</small><strong>'+E(value)+'</strong></div>').join('')+'</div>'+
+ '<h3>What the other batters scored</h3><div class="table-scroller"><table><thead><tr><th>Batter</th><th>Runs</th><th>Balls</th><th>Dismissed?</th></tr></thead><tbody>'+
+ team.slice().sort((a,b)=>b.r-a.r).map(r=>'<tr><td>'+E(r.n)+(r.p===selected.p?' · selected':'')+'</td><td>'+I(r.r)+'</td><td>'+I(r.b)+'</td><td>'+(r.x?'Yes':'No')+'</td></tr>').join('')+'</tbody></table></div>'+
+ '<p class="note">These are observed Cricsheet batting records. Share excludes team extras; this comparison is descriptive and does not itself determine actual pitch or bowling difficulty.</p></div>';
+}
 function renderMatches(){
  const holder=$('#match-results');if(!holder)return;
  if(!modernInnings){holder.innerHTML='<div class="panel">Loading licensed source ledger…</div>';return}
  let results=modernInnings.filter(r=>r.f===state.matchFormat&&(!state.matchSearch||(r.n||'').toLowerCase().includes(state.matchSearch.toLowerCase()))&&(!state.matchOpposition||(r.o||'').toLowerCase().includes(state.matchOpposition.toLowerCase())));
  results.sort((a,b)=>state.matchOrder==='runs'?b.r-a.r:b.d.localeCompare(a.d));
  const total=results.length,paged=results.slice(state.matchPage*matchLimit,(state.matchPage+1)*matchLimit);
- const table='<div class="table-scroller"><table><thead><tr><th>Date</th><th>Batter</th><th>Opposition</th><th>Runs</th><th>Balls</th><th>Team</th><th>Data tier</th></tr></thead><tbody>'+paged.map(r=>'<tr><td>'+E(r.d)+'</td><td>'+E(r.n)+'</td><td>'+E(r.o)+'</td><td>'+I(r.r)+'</td><td>'+I(r.b)+'</td><td>'+E(r.t)+'</td><td>Cricsheet modern</td></tr>').join('')+'</tbody></table></div>';
+ const table='<div class="table-scroller"><table><thead><tr><th>Date</th><th>Batter</th><th>Opposition</th><th>Runs</th><th>Balls</th><th>Team</th><th>Source</th><th>Teammates</th></tr></thead><tbody>'+paged.map(r=>'<tr><td>'+E(r.d)+'</td><td>'+E(r.n)+'</td><td>'+E(r.o)+'</td><td>'+I(r.r)+'</td><td>'+I(r.b)+'</td><td>'+E(r.t)+'</td><td>Cricsheet</td><td><button type="button" class="text-link" data-match-innings="'+E(r.i)+'" data-match-player="'+E(r.p)+'">View innings →</button></td></tr>').join('')+'</tbody></table></div>';
  holder.innerHTML='<div class="section-head"><h2>'+I(total)+' observed batting records</h2><span>Licensed modern-only source events; not a historical scorecard census</span></div>'+table+
- '<div class="pager"><button type="button" data-match-page="-1"'+(state.matchPage===0?' disabled':'')+'>← Previous</button><span>Page '+(state.matchPage+1)+' of '+Math.max(1,Math.ceil(total/matchLimit))+'</span><button type="button" data-match-page="1"'+((state.matchPage+1)*matchLimit>=total?' disabled':'')+'>Next →</button></div>';
+ '<div id="match-detail"></div><div class="pager"><button type="button" data-match-page="-1"'+(state.matchPage===0?' disabled':'')+'>← Previous</button><span>Page '+(state.matchPage+1)+' of '+Math.max(1,Math.ceil(total/matchLimit))+'</span><button type="button" data-match-page="1"'+((state.matchPage+1)*matchLimit>=total?' disabled':'')+'>Next →</button></div>';
 }
 function methodology(){
  hero('How the <em>adjustments work</em>','One scorecard-era model, consistent across historical and modern players. We disclose every proxy, eligibility rule and uncertainty limitation.');
@@ -267,6 +285,9 @@ document.addEventListener('change',event=>{
 document.addEventListener('click',event=>{
  const el=event.target.closest('[data-profile]');
  if(el){const f=el.dataset.profileFormat;state.compareFormat=f;state.first=el.dataset.profile;state.second='';go('compare');return}
+ const mi=event.target.closest('[data-match-innings]');
+ if(mi){renderMatchDetail(mi.dataset.matchInnings,mi.dataset.matchPlayer);return}
+ if(event.target.closest('[data-match-close]')){$('#match-detail').innerHTML='';return}
  const pg=event.target.closest('[data-match-page]');
  if(pg){state.matchPage=Math.max(0,state.matchPage+Number(pg.dataset.matchPage));renderMatches();return}
 });
