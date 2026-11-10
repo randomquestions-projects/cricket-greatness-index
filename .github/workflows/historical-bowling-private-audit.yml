@@ -1,0 +1,65 @@
+name: Private historical bowling source import audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/historical-bowling-private-audit.yml'
+      - 'research/bowling_historical/private_ingest_smoke.py'
+permissions:
+  contents: write
+concurrency:
+  group: historical-bowling-private-schema-audit
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install private-only import dependencies
+        run: python -m pip install "pandas>=2.1,<4" "pyreadr>=0.5,<1"
+      - name: Download three public research archives to an ephemeral private runner
+        run: python -m research.bowling_historical.private_ingest_smoke
+      - name: Validate archive schema profile and nonpublication
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('research/bowling_historical/source_import_profile.json')
+          a=json.loads(p.read_text())
+          assert a['privateTemporarySQLiteCreated']
+          assert not a['historicalRawRowsPublished']
+          assert not a['publicBattingAppModified']
+          assert a['dataReuseRightsUnverified']
+          for name in ('philipson_test','golicher_2017','hf_test_bowling','hf_test_matches','hf_test_players'):
+            assert a['sources'][name]['objects']
+          assert not Path('research/bowling_historical/historical_bowling_private.sqlite').exists()
+          print('Source schema validation passed. Only aggregate profile may be published.')
+          PY
+          git diff --exit-code -- site pipeline warehouse/exports
+      - name: Publish aggregate source profiles only
+        run: |
+          set -euo pipefail
+          cp research/bowling_historical/source_import_profile.json /tmp/bowling_hist_source_profile.json
+          BASE="$(git rev-parse HEAD)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for TRY in 1 2 3; do
+            git fetch origin main
+            if ! git diff --quiet "$BASE" origin/main -- research/bowling_historical/private_ingest_smoke.py .github/workflows/historical-bowling-private-audit.yml; then
+              echo "Importer changed during run: skip old profile"
+              exit 0
+            fi
+            git reset --hard origin/main
+            mkdir -p research/bowling_historical
+            cp /tmp/bowling_hist_source_profile.json research/bowling_historical/source_import_profile.json
+            git add research/bowling_historical/source_import_profile.json
+            if git diff --cached --quiet; then exit 0; fi
+            git commit -m "Research: source-only historical bowling schema validation (no private raw rows)"
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
