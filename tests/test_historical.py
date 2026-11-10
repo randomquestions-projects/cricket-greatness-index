@@ -100,7 +100,9 @@ class HistoricalTests(unittest.TestCase):
       self.assertTrue(report['players'])
       self.assertEqual(report['players'][0]['name'],'Don Bradman')
       self.assertGreater(report['players'][0]['quality'],100)
-      self.assertGreater(report['players'][0]['teamCarry'],100)
+      # Only five source batters per innings: under the six-player minimum.
+      # This correctly returns missing team-carry rather than fabricating peers.
+      self.assertIsNone(report['players'][0]['teamCarry'])
 
  def test_end_to_end_historic_and_modern_reports_remain_uncertified(self):
     with tempfile.TemporaryDirectory() as tmp:
