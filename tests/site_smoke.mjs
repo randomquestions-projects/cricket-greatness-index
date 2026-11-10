@@ -57,4 +57,5 @@ assert.match(w.document.querySelector('#match-detail').textContent,/Share of rec
 assert.equal(w.document.querySelectorAll('script[src]').length,1);
 assert.equal(w.document.querySelector('script[src]').getAttribute('src'),'assets/app.js');
 console.log('PASS: one application, all ten routes, rankings, comparison, audit and modern explorer');
-w.close();
+// JSDOM is allowed to finish its last microtasks; closing immediately can
+// invalidate document while an asynchronously loaded modern ledger resolves.
