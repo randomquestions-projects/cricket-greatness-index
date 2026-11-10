@@ -1,0 +1,81 @@
+name: Build bowling-only open reference enrichment
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/bowling_enrichment/build.py'
+      - 'research/bowling_enrichment/test_build.py'
+      - '.github/workflows/bowling-reference-enrichment.yml'
+permissions:
+  contents: write
+concurrency:
+  group: bowling-open-references
+  cancel-in-progress: false
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests for exact-ID joins and ambiguous unknowns
+        run: python -m unittest research.bowling_enrichment.test_build -v
+      - name: Retrieve openly licensed Cricsheet registers and CC0 Wikidata fields
+        run: |
+          python -m research.bowling_enrichment.build \
+            --output research/bowling_enrichment/output
+      - name: Validate source provenance and no historical scorecards
+        run: |
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          root=Path('research/bowling_enrichment/output')
+          m=json.loads((root/'provenance.json').read_text())
+          assert m['rights']['cricsheet_register']=='ODC-BY-1.0, attribution required'
+          assert m['rights']['wikidata_structured_claims']=='CC0'
+          assert m['player_count']>10000
+          assert m['venue_count']>100
+          assert all(x['license']=='ODC-BY-1.0' for x in m['source'].values())
+          for name in ('player_bowling_style.csv','venue_physical_country.csv','player_aliases.csv','venue_aliases.csv'):
+            assert (root/name).exists(),name
+          print('Player/venue reference coverage:',m['status'])
+          if m['errors']:
+            print('Important partial-coverage warnings:',m['errors'])
+          PY
+          git diff --exit-code -- site pipeline .github/workflows/refresh-data.yml
+      - name: Save only cleared bowling references in reusable warehouse
+        run: |
+          set -euo pipefail
+          mkdir -p warehouse/exports/bowling_open_enrichment
+          for f in player_bowling_style.csv venue_physical_country.csv player_aliases.csv venue_aliases.csv provenance.json; do
+            cp "research/bowling_enrichment/output/$f" "warehouse/exports/bowling_open_enrichment/$f"
+          done
+          SNAP="$(mktemp -d)"
+          cp -a warehouse/exports/bowling_open_enrichment "$SNAP/refs"
+          BASE="$(git rev-parse HEAD)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for ATTEMPT in 1 2 3; do
+            git fetch origin main
+            if ! git diff --quiet "$BASE" origin/main -- research/bowling_enrichment/build.py .github/workflows/bowling-reference-enrichment.yml; then
+              echo "Reference code changed during run. Skip stale results."
+              exit 0
+            fi
+            git reset --hard origin/main
+            mkdir -p warehouse/exports/bowling_open_enrichment
+            cp -a "$SNAP/refs/." warehouse/exports/bowling_open_enrichment/
+            git add warehouse/exports/bowling_open_enrichment/
+            if git diff --cached --quiet; then
+              echo "No reference changes."
+              exit 0
+            fi
+            git commit -m "Warehouse: add ODC-BY/CC0 bowling-style and ground-country reference crosswalks"
+            if git push origin HEAD:main; then
+              echo "Open licensed bowling references committed. No batting changes."
+              exit 0
+            fi
+          done
+          exit 1
