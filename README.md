@@ -81,7 +81,7 @@ Scheduled GitHub Actions execution is best-effort, not a guaranteed hourly/live 
 
 - `pipeline/ingest.py`, `pipeline/historical.py`: ingest the two permitted research input types.
 - `pipeline/ledger.py`: deduplicated, normalized player and match ledger, without a ranking.
-- `pipeline/test_greatness.py`: the **single** parameterized per-format scorecard-era quality/carry/peak/JAWS implementation (the filename reflects the original Test pilot).
+- `pipeline/scorecard_model.py`: the **single** parameterized per-format scorecard-era quality/carry/peak/JAWS implementation (the filename reflects the original Test pilot).
 - `pipeline/format_greatness.py`: generate the three format datasets and normalize multi-format percentiles.
 - `pipeline/publication.py`: licensed modern-only match explorer.
 - `pipeline/reconcile.py`, `pipeline/audit.py`: career totals and source quality.
