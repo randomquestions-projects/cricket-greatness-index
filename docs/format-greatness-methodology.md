@@ -6,7 +6,7 @@ The original V1 navigation has been restored and connected to new computed score
 
 The core same-era scorecard model deliberately uses **runs, dismissal, nearby-year peers, opponent, venue host, contemporaneous match scoring and same-innings teammates** for all eras. Individual modern bowler exposures, Powerplay data, balls faced and delivery-level pitch proxies are **not allowed in the all-era primary model** because historical records frequently do not contain them.
 
-The primary code is `pipeline/test_greatness.py`, now parameterized for Test, ODI and T20I. `pipeline/format_greatness.py` generates `test-greatness.json`, `odi-greatness.json`, `t20i-greatness.json` and `greatness-combined.json` at each successful build.
+The primary code is `pipeline/scorecard_model.py`, now parameterized for Test, ODI and T20I. `pipeline/format_greatness.py` generates `test-greatness.json`, `odi-greatness.json`, `t20i-greatness.json` and `greatness-combined.json` at each successful build.
 
 ## Three headline measurements
 
