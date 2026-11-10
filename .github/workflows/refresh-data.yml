@@ -5,11 +5,11 @@ on:
     paths:
       - '.github/workflows/refresh-data.yml'
       - 'tests/test_historical.py'
-      - 'tests/test_test_greatness.py'
+      - 'tests/test_scorecard_model.py'
       - 'pipeline/ledger.py'
       - 'pipeline/audit.py'
       - 'pipeline/publication.py'
-      - 'pipeline/test_greatness.py'
+      - 'pipeline/scorecard_model.py'
       - 'pipeline/format_greatness.py'
       - 'tests/test_format_greatness.py'
   workflow_dispatch:
