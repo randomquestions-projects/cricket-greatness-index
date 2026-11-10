@@ -1,0 +1,67 @@
+{
+  "generated_utc": "2026-11-10T02:25:29+00:00",
+  "rights": {
+    "cricsheet_register": "ODC-BY-1.0, attribution required",
+    "wikidata_structured_claims": "CC0"
+  },
+  "source": {
+    "people": {
+      "url": "https://cricsheet.org/register/people.csv",
+      "bytes": 1187398,
+      "sha256": "3926fec53340ed8539ba98b420f907ab5e8aced21e8a61138d313adc1ed8a42b",
+      "rows": 18698,
+      "license": "ODC-BY-1.0"
+    },
+    "names": {
+      "url": "https://cricsheet.org/register/names.csv",
+      "bytes": 162471,
+      "sha256": "cde5292c15be1cf03e0b366875b5aa2e23c29283ca9d368bb0f768ea85761fb1",
+      "rows": 7551,
+      "license": "ODC-BY-1.0"
+    },
+    "venues": {
+      "url": "https://cricsheet.org/register/venues.csv",
+      "bytes": 48722,
+      "sha256": "e0d4ec19b3789c16d99a24ec743ab7e4a1f839bb7f62a7c9678a13e30de8066e",
+      "rows": 591,
+      "license": "ODC-BY-1.0"
+    },
+    "venue_names": {
+      "url": "https://cricsheet.org/register/venue_names.csv",
+      "bytes": 12501,
+      "sha256": "01e3b9d059f86ba6ee086cdb08d612b96a45f301912e3302e2edb6f79fa11cfd",
+      "rows": 297,
+      "license": "ODC-BY-1.0"
+    }
+  },
+  "wikidata_queries": {
+    "styles": "SELECT DISTINCT ?espnId ?player ?bowlingStyleLabel WHERE {\n  ?player wdt:P2697 ?espnId; wdt:P2545 ?bowlingStyle.\n  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n}",
+    "venues": "SELECT DISTINCT ?espnId ?ground ?country ?countryLabel ?isoCode WHERE {\n  ?ground wdt:P3572 ?espnId; wdt:P17 ?country.\n  OPTIONAL { ?country wdt:P297 ?isoCode. }\n  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n}"
+  },
+  "wikidata_rows": {
+    "style_claims": 1159,
+    "ground_claims": 14
+  },
+  "status": {
+    "player_bowling_style": {
+      "linked": 572,
+      "unclassified_style": 4,
+      "unmatched": 18122
+    },
+    "venue_physical_country": {
+      "linked": 4,
+      "unmatched": 587
+    }
+  },
+  "player_count": 18698,
+  "venue_count": 591,
+  "notes": [
+    "ESPN numeric identifiers are used only as join keys; no ESPN pages were downloaded.",
+    "Wikidata bowling-style names may represent multiple styles; pace/spin conflicts are unknown.",
+    "Missing and ambiguous venue host countries are not imputed.",
+    "Physical country alone does NOT establish Test/ODI/T20I host cricket team, especially England/UK, UAE or neutral sites.",
+    "No external historical bowling scorecards ingested; no batting app files touched.",
+    "If WDQS fails or rate limits, enrichment must be described as partial, not complete."
+  ],
+  "errors": []
+}
