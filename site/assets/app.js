@@ -13,6 +13,7 @@ const docs={};
 const state={view:'overview',metric:'quality',search:'',country:'All',minimum:35,compareFormat:'test',first:'',second:'',matchPlayer:'',matchFormat:'odi',matchOpposition:'',matchSearch:'',matchOrder:'date',matchPage:0,sortDesc:true};
 const matchLimit=65;
 let modernInnings=null,modernError=null;
+let inningsById=new Map(),inningsByFormat=new Map();
 
 function url(p){return 'data/'+p+'.json'}
 async function fetchJSON(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error('Unable to load '+path+' ('+r.status+')');return r.json()}
@@ -84,7 +85,7 @@ function tableData(f){
  state.minimum=multi?0:(state.minimum||minimum);
  const val=p=>score(p,state.metric,f);
  const filtered=list.filter(p=>(multi||p.innings>=state.minimum)&&(state.country==='All'||p.team===state.country)&&((p.name+' '+p.team).toLowerCase().includes(state.search.toLowerCase())));
- filtered.sort((a,b)=>(val(b)??-1e15)-(val(a)??-1e15));
+ filtered.sort((a,b)=>(val(b)??-1e15)-(val(a)??-1e15)||a.name.localeCompare(b.name)||String(a.playerId).localeCompare(String(b.playerId)));
  return {filtered,multi,minimum,choices};
 }
 function perFormat(f){
@@ -166,8 +167,26 @@ async function loadModern(){
   let blob=await r.blob();
   const stream=blob.stream().pipeThrough(new DecompressionStream('gzip'));
   const text=await new Response(stream).text();
-  modernInnings=JSON.parse(text);
-  if(!Array.isArray(modernInnings))throw new Error('Unexpected modern match data structure');
+  const loaded=JSON.parse(text);
+  if(!Array.isArray(loaded))throw new Error('Unexpected modern match data structure');
+  // Build read-only indexes once. Filters must never re-sort the full ledger.
+  const byInnings=new Map(),byFormat=new Map();
+  for(const row of loaded){
+   if(!row||typeof row!=='object'||typeof row.i!=='string'||typeof row.f!=='string')
+    throw new Error('Malformed modern match row');
+   if(!byInnings.has(row.i))byInnings.set(row.i,[]);
+   byInnings.get(row.i).push(row);
+   if(!byFormat.has(row.f))byFormat.set(row.f,[]);
+   byFormat.get(row.f).push(row);
+  }
+  const sorted=new Map();
+  for(const [format,rows] of byFormat){
+   sorted.set(format,{
+    date:rows.slice().sort((a,b)=>b.d.localeCompare(a.d)||String(a.i).localeCompare(String(b.i))||String(a.p).localeCompare(String(b.p))),
+    runs:rows.slice().sort((a,b)=>b.r-a.r||b.d.localeCompare(a.d)||String(a.i).localeCompare(String(b.i))||String(a.p).localeCompare(String(b.p)))
+   });
+  }
+  inningsById=byInnings;inningsByFormat=sorted;modernInnings=loaded;
   return modernInnings;
  }catch(err){modernError=err;throw err}
 }
@@ -182,7 +201,7 @@ function matchExplorer(){
 function renderMatchDetail(inningsId,playerId){
  const area=$('#match-detail');
  if(!area||!modernInnings)return;
- const innings=modernInnings.filter(r=>r.i===inningsId);
+ const innings=inningsById.get(inningsId)||[];
  const selected=innings.find(r=>r.p===playerId);
  if(!selected){area.innerHTML='';return}
  const team=innings.filter(r=>r.t===selected.t);
@@ -200,8 +219,9 @@ function renderMatchDetail(inningsId,playerId){
 function renderMatches(){
  const holder=$('#match-results');if(!holder)return;
  if(!modernInnings){holder.innerHTML='<div class="panel">Loading licensed source ledger…</div>';return}
- let results=modernInnings.filter(r=>r.f===state.matchFormat&&(!state.matchSearch||(r.n||'').toLowerCase().includes(state.matchSearch.toLowerCase()))&&(!state.matchOpposition||(r.o||'').toLowerCase().includes(state.matchOpposition.toLowerCase())));
- results.sort((a,b)=>state.matchOrder==='runs'?b.r-a.r:b.d.localeCompare(a.d));
+ const sorted=inningsByFormat.get(state.matchFormat)?.[state.matchOrder]||[];
+ const nameQuery=state.matchSearch.trim().toLowerCase(),oppositionQuery=state.matchOpposition.trim().toLowerCase();
+ const results=sorted.filter(r=>(!nameQuery||(r.n||'').toLowerCase().includes(nameQuery))&&(!oppositionQuery||(r.o||'').toLowerCase().includes(oppositionQuery)));
  const total=results.length,paged=results.slice(state.matchPage*matchLimit,(state.matchPage+1)*matchLimit);
  const table='<div class="table-scroller"><table><thead><tr><th>Date</th><th>Batter</th><th>Opposition</th><th>Runs</th><th>Balls</th><th>Team</th><th>Source</th><th>Teammates</th></tr></thead><tbody>'+paged.map(r=>'<tr><td>'+E(r.d)+'</td><td>'+E(r.n)+'</td><td>'+E(r.o)+'</td><td>'+I(r.r)+'</td><td>'+I(r.b)+'</td><td>'+E(r.t)+'</td><td>Cricsheet</td><td><button type="button" class="text-link" data-match-innings="'+E(r.i)+'" data-match-player="'+E(r.p)+'">View innings →</button></td></tr>').join('')+'</tbody></table></div>';
  holder.innerHTML='<div class="section-head"><h2>'+I(total)+' observed batting records</h2><span>Licensed modern-only source events; not a historical scorecard census</span></div>'+table+
