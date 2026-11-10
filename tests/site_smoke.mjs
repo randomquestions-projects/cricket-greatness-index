@@ -13,7 +13,7 @@ w.DecompressionStream=globalThis.DecompressionStream;
 w.Response=globalThis.Response;
 w.fetch=async url=>{
   const path=String(url).split('?')[0].replace(/^\/+/,'');
-  if(!/^data\/[a-z0-9_-]+\.(json|gz)$/.test(path))throw new Error('Unexpected fetch '+path);
+  if(!/^data\/[a-z0-9_-]+\.(json|json\.gz)$/.test(path))throw new Error('Unexpected fetch '+path);
   try{
     const bytes=readFileSync('site/'+path);
     if(path.endsWith('.gz'))return {ok:true,blob:async()=>new Blob([bytes])};
