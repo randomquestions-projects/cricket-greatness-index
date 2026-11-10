@@ -10,7 +10,7 @@ import json, pathlib
 from collections import defaultdict,Counter
 from datetime import datetime,timezone
 from .ingest import ROOT
-from .model import read_innings
+from .ledger import read_innings
 
 # Historical retired careers only: their reference totals are time-invariant.
 # Sources: ICC individual player pages and ICC Hall of Fame.
@@ -49,11 +49,6 @@ def reconcile(root=ROOT):
     result=reconcile_rows(rows)
     public=root/'site'/'data';public.mkdir(parents=True,exist_ok=True)
     (public/'career-reconciliation.json').write_text(json.dumps(result,indent=2)+'\n')
-    report_file=public/'report.json'
-    if report_file.exists():
-        report=json.loads(report_file.read_text());report['careerValidation']=result
-        wire=json.dumps(report,separators=(',',':'));report_file.write_text(wire)
-        (public/'bootstrap.js').write_text('window.CGL_REPORT='+wire.replace('</','<\\/')+';\n')
     return result
 
 def main():
