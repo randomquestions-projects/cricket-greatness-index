@@ -1,19 +1,21 @@
-name: Validate all-era batting greatness dashboards
+name: Validate unified cricket research platform
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - 'site/index.html'
+      - 'site/assets/**'
+      - 'site/data/**'
+      - 'pipeline/**'
+      - 'tests/**'
       - '.github/workflows/check-format-greatness.yml'
-      - 'site/assets/format-greatness.js'
-      - 'site/assets/app.js'
-      - 'site/format-greatness.html'
-      - 'tests/test_format_greatness.py'
-  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,23 +24,46 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Unit tests for format normalization and JAWS-inspired comparison
-        run: python -m unittest tests.test_format_greatness -v
-      - name: Validate browser script and original nav links
+      - name: Validate Python source ledger and unified model tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate one-page website and fail if legacy outputs resurface
         run: |
-          node --check site/assets/format-greatness.js
           node --check site/assets/app.js
           python - <<'PY'
+          import json
           from pathlib import Path
-          h=Path('site/format-greatness.html').read_text()
-          assert '<script src="assets/format-greatness.js"></script>' in h
-          for f in ['test','odi','t20i','test_odi','all_three']:
-              assert 'format='+f in h
-              assert 'format='+f in Path('site/index.html').read_text()
-          j=Path('site/assets/format-greatness.js').read_text()
-          assert 'data/greatness-combined.json' in j
-          assert 'greatnessIntro' in Path('site/assets/app.js').read_text()
-          assert 'opponentAndVenue' in j
-          assert 'bestSevenSeasons' in j
-          print('UI validation passed: 5 formats, 3 indices, JAWS, comparison')
+          site=Path('site')
+          html=(site/'index.html').read_text()
+          assert '<script defer src="assets/app.js"></script>' in html
+          assert 'bootstrap.js' not in html and 'focus.js' not in html
+          assert not (site/'assets/format-greatness.js').exists()
+          assert not (site/'assets/test-greatness.js').exists()
+          assert not (site/'data/bootstrap.js').exists()
+          assert not (site/'data/report.json').exists()
+          assert not (site/'data/focus-innings.json').exists()
+          assert not (site/'data/focus.js').exists()
+          assert not (site/'data/innings.csv.gz').exists()
+          assert not (site/'standalone.html').exists()
+          assert not Path('pipeline/model.py').exists()
+          assert not Path('pipeline/standalone.py').exists()
+          for f in ('overview','test','odi','t20i','test_odi','all_three','compare','matches','methodology','coverage'):
+            assert 'href="#'+f+'"' in html, f
+          script=(site/'assets/app.js').read_text()
+          assert 'data/innings.json.gz' in script
+          assert 'data/'+ 'report.json' not in script
+          assert 'function overview()' in script
+          assert 'function methodology()' in script
+          for f in ('test','odi','t20i'):
+            d=json.loads((site/'data'/(f+'-greatness.json')).read_text())
+            assert d['format']==f and d['scorecardCommonDenominator']
+            assert not d['modernOnlyFeaturesInPrimaryModel']
+            assert d['qualifiedPlayers']>100
+          d=json.loads((site/'data/greatness-combined.json').read_text())
+          assert d['combined']['test_odi'] and d['combined']['all_three']
+          assert not d['allTimeCertified']
+          for p in ('site/test-greatness.html','site/format-greatness.html'):
+            s=Path(p).read_text()
+            assert 'index.html#' in s
+            assert 'g-layout' not in s and 'test-layout' not in s
+          print('Unified site passed: one app, one model, 10 views, no legacy ranking reports')
           PY
