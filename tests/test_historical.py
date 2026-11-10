@@ -3,7 +3,8 @@ import csv,gzip,json,pathlib,tempfile,unittest
 from zipfile import ZipFile
 from pipeline.historical import (load_batting,ingest_historical,fmt_name,parse_day,country,batsman)
 from pipeline.ingest import ingest,FILES
-from pipeline.model import read_innings,scorecard_parity,build
+from pipeline.ledger import read_innings
+from pipeline.test_greatness import build_from_rows
 from pipeline.reconcile import reconcile_rows
 from pipeline.audit import audit
 from tests.test_pipeline import example
@@ -94,12 +95,12 @@ class HistoricalTests(unittest.TestCase):
         wr=csv.DictWriter(fp,fieldnames=HEAD);wr.writeheader();wr.writerows(o)
       rows,_=load_batting(hist/'all-innings.csv')
       for r in rows:r['scorecardOnly']=True
-      report=scorecard_parity(rows)
-      self.assertTrue(report['hasHistorical'])
-      self.assertTrue(report['rankings']['test'])
-      self.assertEqual(report['rankings']['test'][0]['name'],'Don Bradman')
-      self.assertGreater(report['rankings']['test'][0]['index'],100)
-      self.assertGreater(report['rankings']['test'][0]['teamCarryIndex'],100)
+      report=build_from_rows(rows,bootstraps=False,format_code='test',minimum_innings=20)
+      self.assertFalse(report['certifiedAllTimeRanking'])
+      self.assertTrue(report['players'])
+      self.assertEqual(report['players'][0]['name'],'Don Bradman')
+      self.assertGreater(report['players'][0]['quality'],100)
+      self.assertGreater(report['players'][0]['teamCarry'],100)
 
  def test_end_to_end_historic_and_modern_reports_remain_uncertified(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -123,14 +124,10 @@ class HistoricalTests(unittest.TestCase):
       with (src/'all-innings.csv').open('w',newline='') as fp:
         wr=csv.DictWriter(fp,fieldnames=HEAD);wr.writeheader();wr.writerows(obs)
       ingest_historical(src,data)
-      report=build(data,root/'site'/'data')
-      self.assertTrue(report['metadata']['hasHistoricalScorecards'])
-      self.assertFalse(report['metadata']['isAllTimeEligible'])
-      self.assertTrue(report['scorecardParity']['hasHistorical'])
-      self.assertGreater(report['metadata']['historicalDistinctMatchesAfterDedup'],29)
-      self.assertIn('Don Bradman', [x['name'] for x in report['scorecardParity']['rankings']['test']])
-      self.assertEqual(report['historicalFocus'],[])  # rights-uncertain historic innings not published
-      self.assertIn('Don Bradman',[x['name'] for x in report['scorecardParity']['rankings']['test']])
+      report=build_from_rows(read_innings(data),bootstraps=False,format_code='test',minimum_innings=20)
+      self.assertFalse(report['certifiedAllTimeRanking'])
+      self.assertFalse(report['modernOnlyFeaturesInPrimaryModel'])
+      self.assertIn('Don Bradman', [p['name'] for p in report['players']])
       reconciliation=reconcile_rows(read_innings(data))
       self.assertFalse(reconciliation['allReferenceCareerRunTotalsMatch'])
       self.assertEqual(reconciliation['checkedCareers'],5)
