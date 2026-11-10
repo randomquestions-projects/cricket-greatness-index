@@ -1,0 +1,131 @@
+{
+  "title": "Historical bowling data source clearance registry",
+  "generatedUTC": "2026-11-10",
+  "policy": "Source visibility ≠ permission to redistribute. Only licensed records are eligible for the open/public warehouse. Unverified sources may be assessed via metadata and schema, but original rows are not automatically imported.",
+  "sources": [
+    {
+      "id": "cricsheet_modern",
+      "name": "Cricsheet bowling scorecards and deliveries",
+      "url": "https://cricsheet.org/downloads/",
+      "license": "Open Data Commons Attribution License v1.0",
+      "status": "approved_with_attribution",
+      "openWarehouseEligible": true,
+      "coverage": "2001–present observed Test; 2002–present observed ODI; 2005–present T20I",
+      "dataTypes": [
+        "bowling figures",
+        "balls",
+        "runs conceded",
+        "wickets",
+        "match metadata",
+        "teams",
+        "venues",
+        "bowling teammates"
+      ],
+      "notes": "Existing licensed men/women scorecard warehouse, immutable snapshots."
+    },
+    {
+      "id": "cricsheet_register",
+      "name": "Cricsheet people and venue registers",
+      "url": "https://cricsheet.org/register/",
+      "license": "Open Data Commons Attribution License v1.0",
+      "status": "approved_with_attribution",
+      "openWarehouseEligible": true,
+      "coverage": "18,698 people; 591 venues in Nov 2026 snapshot",
+      "dataTypes": [
+        "player aliases",
+        "stable source identifiers",
+        "ground names",
+        "ground aliases"
+      ],
+      "notes": "Does not supply bowler bowling-style, venue physical country, or verified cricket host."
+    },
+    {
+      "id": "wikidata",
+      "name": "Wikidata structured bowling style and ground geography",
+      "url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+      "license": "CC0",
+      "status": "approved",
+      "openWarehouseEligible": true,
+      "coverage": "Sparse: only subset of Cricsheet identities",
+      "dataTypes": [
+        "P2545 bowling style",
+        "P2697 external player ID",
+        "P3572 external ground ID",
+        "P17 country",
+        "P297 country code"
+      ],
+      "notes": "Official country of play NOT inferred from physical country; name ambiguity kept unknown."
+    },
+    {
+      "id": "philipson_test_bowlers_2022",
+      "name": "MPCMP Test bowling dataset (Philipson)",
+      "url": "https://github.com/petephilipson/MPCMP_Test_bowlers",
+      "license": "No explicit license observed in GitHub repository",
+      "status": "permission_unverified",
+      "openWarehouseEligible": false,
+      "coverage": "Reported 47,216 Test bowler-innings; 2,207 bowlers; 1877–2022",
+      "dataTypes": [
+        "Test bowling performance",
+        "opposition and game-context covariates as described by study"
+      ],
+      "expectedFile": "bowldat2022_Toss.RData",
+      "downloadAction": "Do not upload to public warehouse; request explicit data reuse and redistribution permission; then independently validate provenance."
+    },
+    {
+      "id": "golicher_crickdata_2017",
+      "name": "2017 historical bowling figures (Duncan Golicher)",
+      "url": "https://github.com/dgolicher/crickdata",
+      "license": "Package DESCRIPTION says 'License: What license is it under?'; source explicitly ESPN-derived",
+      "status": "permission_unverified_third_party_espn",
+      "openWarehouseEligible": false,
+      "coverage": "Test, ODI, T20I records through 20 August 2017",
+      "dataTypes": [
+        "bowling innings",
+        "wickets",
+        "runs conceded",
+        "match metadata"
+      ],
+      "expectedFile": "data/bowling.rda",
+      "downloadAction": "Author permission alone may not clear ESPN database rights; require a documented reuse basis covering third-party source rights."
+    },
+    {
+      "id": "hf_test_1877_2014",
+      "name": "Historical Test scorecard CSV (Hugging Face)",
+      "url": "https://huggingface.co/datasets/bhuvaneshprasad/test-cricket-dataset-1877-2014",
+      "license": "No license on dataset card or repository files observed",
+      "status": "permission_unverified_provenance_unverified",
+      "openWarehouseEligible": false,
+      "coverage": "Claims 1877–2014 Test scorecards",
+      "dataTypes": [
+        "bowling cards",
+        "match details"
+      ],
+      "expectedFile": "test_Bowling_Card.csv",
+      "downloadAction": "Seek uploader/source permission and provenance, validate match census, inspect known dataset viewer schema cast issue."
+    },
+    {
+      "id": "historical_scorecard_providers",
+      "name": "Howstat, CricketArchive, CricArcade, ESPN, Cricket Database",
+      "url": "https://www.espncricinfo.com/",
+      "license": "Bulk republishing rights not verified",
+      "status": "reference_only",
+      "openWarehouseEligible": false,
+      "coverage": "Older historical scorecards and career references",
+      "dataTypes": [
+        "independent checks",
+        "retired player totals",
+        "older innings bowling figures"
+      ],
+      "downloadAction": "Reference for validation only unless licensed; do not scrape systematically."
+    }
+  ],
+  "acceptanceCriteria": [
+    "Dataset provenance and license/legal basis reviewed and recorded per source and version.",
+    "Historical scorecards only joined on stable player/match IDs or independently validated keys.",
+    "Per-format and per-year completeness checked against a distinct reference match census.",
+    "Pre-Cricsheet legends (Barnes, Marshall, Laker, Grimmett, Hadlee, Warne, Murali, McGrath) audited for full-career innings/wickets.",
+    "Overlapping modern and historic records deduplicated by match/innings, not blindly concatenated.",
+    "Commercial/third-party terms explicitly considered before redistributing rows to GitHub/public app.",
+    "Separate bowling dataset; leave batting app, model and public data untouched."
+  ]
+}
