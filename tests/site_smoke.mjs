@@ -26,7 +26,8 @@ async function route(name){
  w.location.hash='#'+name;
  w.dispatchEvent(new w.Event('hashchange'));
  await settle();
- assert.equal(w.document.querySelector('#breadcrumb').textContent.trim().toLowerCase(),({'test_odi':'tests + odis','all_three':'all three formats'}[name]||name.replaceAll('_',' ')).toLowerCase());
+ const titles={test:'Test Cricket',odi:'One-Day Internationals',t20i:'T20 Internationals',test_odi:'Tests + ODIs',all_three:'All Three Formats',compare:'Batter Comparison',matches:'Match Explorer',methodology:'Index Methodology',coverage:'Data & Coverage'};
+ assert.equal(w.document.querySelector('#breadcrumb').textContent.trim(),titles[name].toUpperCase());
  assert.ok(w.document.querySelector('#page-body').textContent.trim().length>100,'empty route '+name);
 }
 await settle();
