@@ -222,7 +222,10 @@ function coverage(){
  '<section class="section"><div class="section-head"><h2>Licensed sources and boundaries</h2></div><div class="panel prose"><p><b>Cricsheet:</b> modern events and derived scorecards from the openly licensed ODC-BY archive. The match explorer uses these records only.</p><p><b>Historical research:</b> a separate 2017 ESPN-derived batting-innings source, provisionally deduplicated with modern matches. Its redistribution rights are not established. New public rankings contain aggregated player/model findings, not raw historical scorecards.</p><p><b>Master warehouse:</b> the independently reusable open source database is separate from these research-only historical inputs. New model data refreshes weekly but do not certify complete historical coverage.</p><p><a href="https://github.com/randomquestions-projects/cricket-greatness-index/blob/main/warehouse/SCORECARD_STATUS.md">Source audits and limitations →</a></p></div></section>';
 }
 async function render(){
- const raw=location.hash.replace(/^#/,'').split('/')[0],f=LABEL[raw]?raw:'overview';state.view=f;state.search=f===state._lastFormat?state.search:'';state.country=f===state._lastFormat?state.country:'All';state._lastFormat=f;
+ const raw=location.hash.replace(/^#/,'').split('/')[0],f=LABEL[raw]?raw:'overview';
+ const changed=f!==state._lastFormat;
+ if(changed){state.search='';state.country='All';state.minimum=docs[f]?.qualificationMinimumInnings||(f==='t20i'?25:35);state.metric=isCombined(f)?'jawsPercentile':'quality'}
+ state.view=f;state._lastFormat=f;
  nav(f);
  const block=$('#page-body');
  if(f==='overview')block.innerHTML=overview();
