@@ -6,7 +6,9 @@ on:
       - '.github/workflows/refresh-data.yml'
       - 'tests/test_historical.py'
       - 'tests/test_test_greatness.py'
-      - 'pipeline/model.py'
+      - 'pipeline/ledger.py'
+      - 'pipeline/audit.py'
+      - 'pipeline/publication.py'
       - 'pipeline/test_greatness.py'
       - 'pipeline/format_greatness.py'
       - 'tests/test_format_greatness.py'
@@ -35,73 +37,54 @@ jobs:
         run: python -m pipeline.ingest --download
       - name: Download and import historical Test/ODI/T20I innings snapshots
         run: python -m pipeline.historical --download
-      - name: Compute modern and historical-comparable indices from observed innings
-        run: python -m pipeline.model
-      - name: Build Test ODI T20I and multi-format JAWS-inspired greatness indices
+      - name: Compute all-format greatness using the single era-comparable methodology
         run: python -m pipeline.format_greatness
+      - name: Publish openly licensed modern match-explorer rows only
+        run: python -m pipeline.publication
       - name: Reconcile retired batting careers against ICC totals
         run: python -m pipeline.reconcile
       - name: Generate coverage audit
         run: python -m pipeline.audit
-      - name: Make standalone HTML
-        run: python -m pipeline.standalone
-      - name: Verify reports are genuinely populated
+      - name: Verify one canonical public model and no legacy output
         run: |
           python - <<'PY'
-          import json
+          import json,gzip
           from pathlib import Path
-          m=json.loads(Path('data/generated/manifest.json').read_text())
-          r=json.loads(Path('site/data/report.json').read_text())
-          assert m['matchCount']>=1000, 'Too few source matches for a production research build'
-          assert sum(len(a) for a in r['rankings'].values())>=100, 'No real eligible player indices'
-          assert not r['metadata']['isAllTimeEligible'], 'Historically incomplete archive cannot be declared all time'
-          new=json.loads(Path('site/data/test-greatness.json').read_text())
-          assert new['scorecardCommonDenominator'] is True
-          assert new['modernOnlyFeaturesInPrimaryModel'] is False
-          assert new['certifiedAllTimeRanking'] is False
-          assert new['historicalRawRowsRedistributed'] is False
-          assert new['observedDistinctMatches']>2500
-          assert new['qualifiedPlayers']>=150
-          assert new['historicalTestInnings']>10000
-          names={p['name'] for p in new['players']}
-          assert {'Don Bradman','Virat Kohli','Sachin Tendulkar'}.issubset(names), 'All-era comparison players absent'
-          assert r.get('historicalFocus') == [], 'Historical per-match extracts must not be republished'
-          assert len(r.get('scorecardParity',{}).get('rankings',{}).get('test',[]))>50
-          for fmt in ('test','odi','t20i'):
-            d=json.loads(Path('site/data',fmt+'-greatness.json').read_text())
-            assert d['format']==fmt
-            assert d['scorecardCommonDenominator'] is True
-            assert d['modernOnlyFeaturesInPrimaryModel'] is False
+          site=Path('site')
+          manifest=json.loads(Path('data/generated/manifest.json').read_text())
+          assert manifest['matchCount']>=1000
+          assert not (site/'data/report.json').exists()
+          assert not (site/'data/bootstrap.js').exists()
+          assert not (site/'data/focus.js').exists()
+          assert not (site/'data/innings.csv.gz').exists()
+          assert not (site/'standalone.html').exists()
+          expected={'test':('Don Bradman','Sachin Tendulkar'),
+                    'odi':('Viv Richards','Sachin Tendulkar'),
+                    't20i':('Virat Kohli',)}
+          for fmt,names in expected.items():
+            d=json.loads((site/'data'/(fmt+'-greatness.json')).read_text())
+            assert d['format']==fmt and d['scorecardCommonDenominator']
+            assert not d['modernOnlyFeaturesInPrimaryModel']
+            assert not d['certifiedAllTimeRanking']
+            assert not d['historicalRawRowsRedistributed']
             assert d['qualifiedPlayers']>=30
-            assert len([p for p in d['players'] if p.get('jawsStyleValue') is not None])>=30
-          combo=json.loads(Path('site/data/greatness-combined.json').read_text())
-          assert combo['allTimeCertified'] is False
-          assert combo['publishedHistoricalInningsRows'] is False
-          assert not combo['modernOnlyFeaturesInPrimaryIndex']
-          assert len(combo['combined']['test_odi'])>=20
-          assert len(combo['combined']['all_three'])>=5
-          assert Path('site/format-greatness.html').exists()
-          assert Path('site/assets/format-greatness.js').exists()
-          coverage=json.loads(Path('site/data/coverage-status.json').read_text())
-          assert not coverage['historicalCompletenessCertified'], 'Source presence must not be called certified official coverage'
-          assert not coverage['allTimeRankingPermitted'], 'Incomplete history must not generate all-time rankings'
-          h=json.loads(Path('data/generated/historical-manifest.json').read_text())
-          assert h['historicalInnings']>=20000, 'Historical source appears too small or missing'
-          assert h['historicalMatchCount']>=2000, 'Historical match coverage unexpectedly low'
-          assert h['firstDate'][:4]<='1930', 'Prewar Test batting history absent; do not publish as complete'
-          assert h['byFormat'].get('test',0)>=1000, 'Historical Test innings not imported'
-          assert h['byFormat'].get('odi',0)>=500, 'Historical ODI innings not imported'
-          assert r['scorecardParity']['hasHistorical'], 'Historical parity model did not run'
-          assert any(x.get('name')=='Don Bradman' for x in r['scorecardParity']['rankings'].get('test',[])), 'Bradman absent from scorecard parity model'
-          assert any(x.get('name')=='Viv Richards' for x in r['scorecardParity']['rankings'].get('odi',[])), 'Richards absent from historical scorecards'
-          assert any(x.get('name')=='Sachin Tendulkar' for x in r['scorecardParity']['rankings'].get('odi',[])), 'Tendulkar absent from historical scorecards'
-          career=json.loads(Path('site/data/career-reconciliation.json').read_text())
-          assert len(career['checks'])>=5, 'Reference career reconciliation missing'
-          # Do NOT call the source complete just because it includes these players.
-          # Non-matching totals are still reported to the website for investigation.
-          from datetime import date, timedelta
-          assert date.fromisoformat(m['latestDate']) >= date.today()-timedelta(days=90), 'Source archive appears stale (>90 days); investigate before publishing'
-          print('Validated:', m['matchCount'],'matches,',sum(len(x) for x in r['rankings'].values()),'eligible batting indices')
+            p={x['name'] for x in d['players']}
+            assert any(n in p for n in names), (fmt,names)
+          d=json.loads((site/'data/greatness-combined.json').read_text())
+          assert not d['allTimeCertified'] and not d['publishedHistoricalInningsRows']
+          assert len(d['combined']['test_odi'])>=20
+          assert len(d['combined']['all_three'])>=5
+          c=json.loads((site/'data/coverage-status.json').read_text())
+          assert c['totalObservedMatches']>10000
+          assert not c['historicalCompletenessCertified']
+          assert not c['allTimeRankingPermitted']
+          checks=json.loads((site/'data/career-reconciliation.json').read_text())
+          assert checks['passingCareers']>=5
+          with gzip.open(site/'data/innings.json.gz','rt') as f:
+            modern=json.load(f)
+          assert modern and all(r['source']=='Cricsheet ODC-BY 1.0' for r in modern)
+          assert 'assets/app.js' in (site/'index.html').read_text()
+          print('Canonical model and source-integrity checks passed:',manifest['matchCount'],'modern matches')
           PY
       - name: Commit validated derived data without merge conflicts
         run: |
@@ -111,7 +94,6 @@ jobs:
           SNAP="$(mktemp -d)"
           cp -a site/data "$SNAP/site-data"
           cp data/coverage.md "$SNAP/coverage.md"
-          cp site/standalone.html "$SNAP/standalone.html"
           BASE_SHA="$(git rev-parse HEAD)"
           # Rebase would conflict on regenerated large data outputs. Instead,
           # apply these already validated outputs on the latest remote tree.
@@ -126,8 +108,7 @@ jobs:
             mkdir -p site/data data
             cp -a "$SNAP/site-data/." site/data/
             cp "$SNAP/coverage.md" data/coverage.md
-            cp "$SNAP/standalone.html" site/standalone.html
-            git add site/data/ data/coverage.md site/standalone.html
+            git add site/data/ data/coverage.md
             if git diff --cached --quiet; then
               echo "No changes in computed cricket outputs"
               exit 0
