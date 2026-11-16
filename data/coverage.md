@@ -1,6 +1,6 @@
 # Cricket Greatness Lab · source coverage audit
 
-Generated 2026-11-10T05:19:51+00:00.
+Generated 2026-11-16T07:07:17+00:00.
 
 **Official all-time completeness: NOT CERTIFIED.** This is a count of observed research records, not official match-by-match validation.
 
