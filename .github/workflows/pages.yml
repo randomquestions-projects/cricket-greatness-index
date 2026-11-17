@@ -1,4 +1,4 @@
-name: Publish Cricket Greatness Lab (GitHub Pages)
+name: Publish outputs-only Cricket Greatness Lab (GitHub Pages)
 on:
   workflow_dispatch:
   push:
@@ -6,31 +6,81 @@ on:
     paths:
       - 'site/**'
       - '.github/workflows/pages.yml'
-  # GitHub Actions commits made with GITHUB_TOKEN do not trigger push
-  # workflows. Re-deploy the freshly committed derived data after its
-  # source/model validation job completes successfully.
-  workflow_run:
-    workflows: ['Refresh international cricket records']
-    types: [completed]
 permissions:
   contents: read
   pages: write
   id-token: write
 concurrency:
-  group: pages
+  group: cricket-output-only-pages
   cancel-in-progress: false
 jobs:
   deploy:
-    # Only publish trusted successful refreshes from this repository's main.
-    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'main') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require a live, valid bounded results API before any public-site cutover
+        env:
+          API_BASE: ${{ vars.CRICKET_OUTPUTS_API_BASE }}
+        run: |
+          python - <<'PY'
+          import json,os,re,urllib.request
+          from urllib.parse import urlparse
+          from pathlib import Path
+          base=os.environ.get("API_BASE","").rstrip("/")
+          uri=urlparse(base)
+          assert uri.scheme=="https" and re.fullmatch(
+              r"[a-z0-9-]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com",uri.hostname or ""
+          ) and uri.path in ("","/") and not uri.query and not uri.fragment, "Approved HTTPS API Gateway required"
+          def read(path):
+              req=urllib.request.Request(base+path,headers={"Accept":"application/json"})
+              with urllib.request.urlopen(req,timeout=18) as response:
+                  assert response.status==200
+                  assert response.headers.get_content_type()=="application/json"
+                  body=response.read(450000)
+                  assert len(body)<450000
+              return json.loads(body)
+          health=read("/v1/cricket/health")
+          assert health.get("status")=="ok"
+          bootstrap=read("/v1/cricket/bootstrap")
+          assert bootstrap.get("schemaVersion")=="cricket-results-v1"
+          assert all(bootstrap.get("leaders",{}).get(f) for f in ("test","odi","t20i"))
+          ranked=read("/v1/cricket/rankings?format=test&page=0")
+          assert ranked.get("items") and len(ranked["items"])<=40
+          modern=read("/v1/cricket/matches?format=odi&page=0")
+          assert isinstance(modern.get("items"),list) and modern.get("schemaVersion")=="cricket-explorer-v1"
+          config=Path("site/assets/config.js")
+          assert 'window.CRICKET_OUTPUTS_API_BASE = "";' in config.read_text()
+          config.write_text("/* Public API origin; no credentials or S3 paths. */\nwindow.CRICKET_OUTPUTS_API_BASE = "+json.dumps(base)+";\n")
+          print("Bounded results and Match Explorer APIs passed. No raw DB endpoints used.")
+          PY
+      - name: Fail closed if any downloadable source or non-UI asset remains
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          site=Path("site")
+          allowed={"index.html","test-greatness.html","format-greatness.html",
+                   ".nojekyll","assets/styles.css","assets/app.js","assets/config.js"}
+          present={p.relative_to(site).as_posix() for p in site.rglob("*") if p.is_file()}
+          assert "index.html" in present and "assets/app.js" in present
+          assert present<=allowed, f"Unapproved website assets: {sorted(present-allowed)}"
+          assert not (site/"data").exists(), "Downloadable site/data is forbidden"
+          js=(site/"assets/app.js").read_text()
+          for blocked in ("data/innings.json.gz","data/test-greatness.json",
+                          "data/odi-greatness.json","data/t20i-greatness.json"):
+              assert blocked not in js, blocked
+          print("Only HTML/CSS/JS UI assets; no data files deployed.")
+          PY
+      - name: Validate browser JavaScript syntax
+        run: node --check site/assets/app.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
