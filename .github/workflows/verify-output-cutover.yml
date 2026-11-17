@@ -45,6 +45,8 @@ jobs:
           PY
       - name: Check browser JavaScript parses
         run: node --check site/assets/app.js
+      - name: Validate public release workflows with actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/pages.yml .github/workflows/verify-output-cutover.yml
       - name: Confirm no public raw-source release workflows remain active
         run: |
           python - <<'PY'
