@@ -31,6 +31,35 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - name: Enforce API-only public Pages bundle and configured backend
+        env:
+          CRICKET_API_BASE: ${{ vars.CRICKET_OUTPUTS_API_BASE }}
+        run: |
+          python - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          from urllib.parse import urlparse
+          base=os.environ.get('CRICKET_API_BASE','')
+          url=urlparse(base)
+          assert url.scheme=='https' and url.hostname and re.fullmatch(
+              r'[a-z0-9-]+\\.execute-api\\.[a-z0-9-]+\\.amazonaws\\.com',url.hostname
+          ) and url.path in ('','/') and not url.query and not url.fragment, (
+              'Missing/rejected CRICKET_OUTPUTS_API_BASE variable. No site cutover allowed.'
+          )
+          root=Path('site')
+          assert root.is_dir()
+          allowed={'index.html','test-greatness.html','format-greatness.html',
+              'assets/app.js','assets/styles.css','assets/config.js'}
+          present={x.relative_to(root).as_posix() for x in root.rglob('*') if x.is_file()}
+          assert present==allowed, 'Public source contains unexpected data or files: '+repr(present^allowed)
+          js=(root/'assets/app.js').read_text()
+          assert 'CRICKET_OUTPUTS_API_BASE' in js
+          assert 'data/innings.json.gz' not in js
+          assert not (root/'data').exists(), 'Bulk data directory prohibited in output-only release'
+          (root/'assets/config.js').write_text(
+             'window.CRICKET_OUTPUTS_API_BASE = '+json.dumps(base.rstrip('/'))+';\\n')
+          print('API-only viewer validated; no downloadable source database in Pages artifact.')
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

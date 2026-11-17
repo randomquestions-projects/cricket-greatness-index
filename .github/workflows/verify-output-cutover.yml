@@ -1,0 +1,60 @@
+name: Validate outputs-only cricket Pages migration
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/verify-output-cutover.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-output-only-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify no data archives, research code or public bulk outputs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          site=Path('site')
+          allowed={
+            'index.html', 'test-greatness.html', 'format-greatness.html',
+            'assets/app.js','assets/styles.css','assets/config.js'
+          }
+          present={p.relative_to(site).as_posix() for p in site.rglob('*') if p.is_file()}
+          assert present==allowed,(present-allowed,allowed-present)
+          assert not (site/'data').exists()
+          for source in ('pipeline','warehouse','research','tests','data','docs'):
+            assert not Path(source).exists(),f'private source unexpectedly published: {source}'
+          js=(site/'assets/app.js').read_text()
+          assert 'CRICKET_OUTPUTS_API_BASE' in js
+          assert 'data/innings.json.gz' not in js
+          assert "get('rankings'" in js and "get('player'" in js
+          assert "get('matches'" in js and "get('innings'" in js
+          html=(site/'index.html').read_text()
+          assert 'src="assets/config.js"' in html and 'src="assets/app.js"' in html
+          assert html.index('src="assets/config.js"')<html.index('src="assets/app.js"')
+          print('API-only static site contract passed; no source files in future Pages bundle.')
+          PY
+      - name: Check browser JavaScript parses
+        run: node --check site/assets/app.js
+      - name: Validate public release workflows with actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/pages.yml .github/workflows/verify-output-cutover.yml
+      - name: Confirm no public raw-source release workflows remain active
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for name in ('master-warehouse','scorecard-warehouse','refresh-data',
+                       'warehouse-events','warehouse-references'):
+            s=(Path('.github/workflows')/(name+'.yml')).read_text()
+            assert 'schedule:' not in s and 'gh release create' not in s
+            assert 'contents: write' not in s
+          print('Legacy raw-data publication disabled in staged branch.')
+          PY
