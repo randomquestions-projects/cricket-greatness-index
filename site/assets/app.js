@@ -5,6 +5,7 @@ const $=q=>document.querySelector(q);
 const FORMATS=['test','odi','t20i'], COMBOS=['test_odi','all_three'], ALL=[...FORMATS,...COMBOS];
 const LABEL={overview:'Overview',test:'Test Cricket',odi:'One-Day Internationals',
  t20i:'T20 Internationals',test_odi:'Tests + ODIs',all_three:'All Three Formats',
+ bowling:'Bowling Rankings',allrounder:'All-Rounder Rankings',
  compare:'Batter Comparison',matches:'Match Explorer',
  methodology:'Index Methodology',coverage:'Data & Coverage'};
 const METRICS={jawsPercentile:'JAWS-inspired percentile',quality:'Era-adjusted quality',
@@ -14,7 +15,8 @@ const N=(v,d=1)=>v==null||!Number.isFinite(+v)?'—':Number(v).toLocaleString('e
 const I=v=>N(v,0);
 const state={view:'overview',format:'test',metric:'jawsPercentile',search:'',country:'',
  page:0,matchFormat:'odi',matchPage:0,matchSearch:'',matchOpposition:'',
- first:null,second:null,compareFormat:'test',compareSearch:'',activeCompareSide:'first'};
+ first:null,second:null,compareFormat:'test',compareSearch:'',activeCompareSide:'first',
+ disciplineFormat:'test',disciplineMetric:'greatness',disciplineSearch:'',disciplineCountry:'',disciplinePage:0};
 let meta=null,requestSerial=0,searchTimer;
 function apiURL(path,params={}){
  const base=String(window.CRICKET_OUTPUTS_API_BASE||'');
@@ -66,14 +68,108 @@ function overview(){
   E(p?.name||'Unavailable')+'</h3><p>JAWS percentile '+N(p?.jawsPercentile)+
   ' · '+I(p?.innings)+' innings</p><span>Open ranking →</span></a>';
  }).join('');
- const tiles=ALL.map(f=>'<a class="view-card" href="#'+f+'"><small>ANALYSIS</small>'+
+ const tiles=['bowling','allrounder',...ALL].map(f=>'<a class="view-card" href="#'+f+'"><small>ANALYSIS</small>'+
  '<strong>'+E(LABEL[f])+'</strong><p>View validated research results and compare historic greats.</p>'+
  '<span>Explore →</span></a>').join('');
  $('#page-body').innerHTML='<div class="stat-grid">'+blocks+'</div>'+
  panel('Leading batters by format','<div class="trio">'+leaders+'</div>')+
  panel('Explore the research','<div class="view-grid">'+tiles+'</div>')+
- '<p class="note">The source data and models are private; the displayed rankings are experimental analytical outputs, not certified all-time records.</p>';
+ '<p class="note">Historic research remains private. Bowling and all-rounder releases use only modern Cricsheet-derived display summaries until older coverage, identities and rights pass independent review. Rankings are not official all-time records.</p>';
 }
+const D_METRICS={
+ bowling:{greatness:'Greatness index',quality:'Era & opponent peer quality',
+          career:'Career value',peak:'Peak quality',wickets:'Wickets'},
+ allrounder:{greatness:'All-rounder index',batting:'Batting percentile',
+             bowling:'Bowling percentile',runs:'Runs',wickets:'Wickets'}
+};
+function disciplineForm(discipline){
+ const formatOptions=FORMATS.map(f=>'<option value="'+f+'"'+(f===state.disciplineFormat?' selected':'')+'>'+E(LABEL[f])+'</option>').join('');
+ const metricOptions=Object.entries(D_METRICS[discipline]).map(([key,label])=>
+   '<option value="'+E(key)+'"'+(key===state.disciplineMetric?' selected':'')+'>'+E(label)+'</option>').join('');
+ return '<div class="controls">'+
+ '<label>Format<select id="discipline-format">'+formatOptions+'</select></label>'+
+ '<label>Rank by<select id="discipline-metric">'+metricOptions+'</select></label>'+
+ '<label>Search player<input id="discipline-search" placeholder="Player or country" value="'+E(state.disciplineSearch)+'"></label>'+
+ '<label>Country<input id="discipline-country" placeholder="Country" value="'+E(state.disciplineCountry)+'"></label></div>';
+}
+async function disciplineRanking(discipline){
+ if(!D_METRICS[discipline])return;
+ if(!D_METRICS[discipline][state.disciplineMetric])state.disciplineMetric='greatness';
+ const serial=++requestSerial;
+ const active=document.activeElement?.id||'';
+ const caret=(active==='discipline-search'||active==='discipline-country')?
+    document.activeElement.selectionStart:null;
+ const heading=discipline==='bowling'?'Bowling':'All-Rounder';
+ hero(heading+' <em>Greatness Index</em>',
+  'Experimental Test, ODI and T20I player rankings based on modern Cricsheet-derived summaries. Historical all-time coverage is not yet certified.');
+ $('#page-body').innerHTML='<div class="callout">Research preview · Modern Cricsheet records only. The older historical bowling archive and unverified cross-source player identities are excluded from this public ranking.</div>'+
+ panel('Explore '+heading+' rankings',disciplineForm(discipline)+
+    '<div id="discipline-results" class="panel">Loading bounded player results…</div>'+
+    '<div id="discipline-profile"></div>');
+ if(caret!==null){const field=$('#'+active);if(field){
+    field.focus();field.setSelectionRange(caret,caret)}}
+ try{
+  const result=await get('discipline-rankings',{discipline,
+     format:state.disciplineFormat,metric:state.disciplineMetric,
+     search:state.disciplineSearch,country:state.disciplineCountry,
+     page:state.disciplinePage});
+  if(serial!==requestSerial||state.view!==discipline)return;
+  if(result.schemaVersion!=='cricket-discipline-projection-v1')
+    throw new Error('Research result schema not approved');
+  const headers=discipline==='bowling'?
+    ['Rank','Bowler / country',D_METRICS[discipline][state.disciplineMetric],
+     'Innings','Wickets','Quality','Career','Peak']:
+    ['Rank','All-rounder / country',D_METRICS[discipline][state.disciplineMetric],
+     'Batting innings','Runs','Wickets','Batting %ile','Bowling %ile'];
+  const key=state.disciplineMetric;
+  const rows=(result.items||[]).map((p,i)=>{
+    const cols=discipline==='bowling'?
+      [I(p.innings),I(p.wickets),N(p.quality),N(p.career),N(p.peak)]:
+      [I(p.innings),I(p.runs),I(p.wickets),N(p.batting),N(p.bowling)];
+    return '<tr><td>'+I(result.page*result.pageSize+i+1)+'</td><td>'+
+     '<button class="text-link" data-discipline-player="'+E(p.playerId)+'">'+E(p.name)+
+     '</button><span class="team">'+E(p.team)+'</span></td><td class="figure">'+
+     N(p[key])+'</td>'+cols.map(v=>'<td>'+E(v)+'</td>').join('')+'</tr>';
+  });
+  const paging='<div class="pager"><button data-discipline-page="-1"'+
+    (result.page===0?' disabled':'')+'>← Previous</button><span>Page '+
+    (result.page+1)+' · '+I(result.total)+' players</span>'+
+    '<button data-discipline-page="1"'+
+    ((result.page+1)*result.pageSize>=result.total?' disabled':'')+'>Next →</button></div>';
+  $('#discipline-results').innerHTML=
+    (rows.length?table(headers,rows):'<p>No eligible players in this filter.</p>')+paging+
+    '<p class="note">Per-format within-cohort experimental model output. Click a player to review permitted summary metrics; no raw scorecards or archives are served.</p>';
+ }catch(err){
+  if(serial!==requestSerial)return;
+  const area=$('#discipline-results');
+  if(area)area.innerHTML='<div class="callout">Bowling and all-rounder results are being connected to their verified private Gold deployment. Batting rankings and Match Explorer remain available. This view does not invent rankings while the API is unavailable.</div>';
+ }
+}
+async function disciplineProfile(discipline,playerId){
+ const area=$('#discipline-profile');if(!area)return;
+ area.innerHTML='<div class="panel">Loading player summary…</div>';
+ try{
+  const payload=await get('discipline-player',{discipline,format:state.disciplineFormat,playerId});
+  if(!area.isConnected||state.view!==discipline)return;
+  const p=payload.player;
+  if(!p)throw new Error('Player no longer available');
+  const fields=discipline==='bowling'?
+   [['Bowling greatness',p.greatness],['Quality',p.quality],
+    ['Career',p.career],['Peak',p.peak],['Wickets',p.wickets],
+    ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate],
+    ['Opponent proxy evidence %',p.opponentEvidencePct]]:
+   [['All-rounder index',p.greatness],['Batting percentile',p.batting],
+    ['Bowling percentile',p.bowling],['Runs',p.runs],
+    ['Wickets',p.wickets],['Batting innings',p.battingInnings],
+    ['Bowling innings',p.bowlingInnings]];
+  area.innerHTML='<article class="player-card"><small>'+E(p.team)+' · '+
+    E(LABEL[state.disciplineFormat])+'</small><h3>'+E(p.name)+'</h3>'+
+    '<div class="research-metric-grid">'+fields.map(([key,value])=>
+    '<div><small>'+E(key)+'</small><b>'+N(value)+'</b></div>').join('')+'</div>'+
+    '<p class="note">Provisional modern-only Cricsheet model; no claim of all-era completeness or independently verified historical identity.</p></article>';
+ }catch(err){if(area.isConnected)showError(area,err)}
+}
+
 async function ranking(fmt){
  hero(E(LABEL[fmt])+' <em>Batting Greatness</em>',
  'Search, filter and rank model-derived player summaries; raw batting and bowling records remain in private storage.');
@@ -250,6 +346,7 @@ async function render(){
  if(!meta){try{meta=await get('bootstrap')}catch(e){showError($('#page-body'),e);return}}
  if(route==='overview')overview();
  else if(ALL.includes(route)){state.format=route;await ranking(route)}
+ else if(route==='bowling'||route==='allrounder')await disciplineRanking(route)
  else if(route==='compare')await compare();
  else if(route==='matches')await matches();
  else if(route==='methodology')methodology();
@@ -282,6 +379,6 @@ document.addEventListener('click',ev=>{
  }
 });
 $('#menu-button').addEventListener('click',()=>{const on=$('#sidebar').classList.toggle('open');$('#menu-button').setAttribute('aria-expanded',String(on))});
-window.addEventListener('hashchange',()=>{state.page=0;render()});
+window.addEventListener('hashchange',()=>{state.page=0;state.disciplinePage=0;state.disciplineMetric='greatness';render()});
 render();
 })();
