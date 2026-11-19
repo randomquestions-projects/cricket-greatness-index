@@ -1,0 +1,23 @@
+name: Verify public cricket Pages has no downloadable data files
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/verify_live_outputs_only.py'
+      - '.github/workflows/verify-live-output-only.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-public-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify deployed Pages viewer and 7 retired download URLs
+        run: python tests/verify_live_outputs_only.py
