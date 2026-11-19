@@ -57,7 +57,7 @@ jobs:
           actual={p.name for p in Path(".").iterdir() if p.name!=".git"}
           assert actual<=allowed, f"Unexpected public root entries: {sorted(actual-allowed)}"
           testfiles={p.name for p in Path("tests").iterdir() if p.is_file()}
-          assert testfiles<={"smoke_outputs_only_browser.py","verify_live_outputs_only.py"}
+          assert testfiles<={"smoke_outputs_only_browser.py","verify_live_outputs_only.py","test_cricket_release_retirement.py"}
           print("Public current branch only includes presentation source and security checks.")
           PY
       - name: Browser code syntax

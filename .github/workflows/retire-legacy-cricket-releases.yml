@@ -1,0 +1,91 @@
+name: Retire three privately archived cricket GitHub Releases
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/scripts/retire_legacy_cricket_releases.py'
+      - '.github/workflows/retire-legacy-cricket-releases.yml'
+      - 'tests/test_cricket_release_retirement.py'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Really delete only the 3 pinned public data Releases (requires backup fingerprints and confirmation)'
+        required: true
+        type: boolean
+        default: false
+      confirmation:
+        description: 'Exact explicit phrase: RETIRE-3-VERIFIED-CRICKET-RELEASES'
+        required: false
+        type: string
+        default: ''
+      asset_manifest_sha:
+        description: 'Verified private S3 backup manifest SHA-256 from successful run 44455762845'
+        required: false
+        type: string
+        default: ''
+      git_history_manifest_sha:
+        description: 'Verified private Git bundle manifest SHA-256 from successful run 44455762845'
+        required: false
+        type: string
+        default: ''
+concurrency:
+  group: retire-verified-cricket-legacy-releases
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  verify-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test fail-closed release inventory and backup acknowledgement
+        run: python -m unittest discover -s tests -p 'test_cricket_release_retirement.py' -v
+      - name: Read-only verify three exact public Releases and 26 matching assets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .github/scripts/retire_legacy_cricket_releases.py
+  delete-after-explicit-backup-check:
+    needs: verify-preview
+    if: github.event_name == 'workflow_dispatch' && inputs.apply == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    environment: github-releases-retirement
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enforce explicit owner approval and both archived backup fingerprints
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          ASSET_SHA: ${{ inputs.asset_manifest_sha }}
+          HISTORY_SHA: ${{ inputs.git_history_manifest_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_ACTOR" = "randomquestions-projects"
+          test "$CONFIRMATION" = "RETIRE-3-VERIFIED-CRICKET-RELEASES"
+          test "$ASSET_SHA" = "d2fc81858b1040649834029a593147ecac29a5cd6f8425b578613f4009b10816"
+          test "$HISTORY_SHA" = "b6fcbf438a6e5d0222b10feaced7024af35bb328f1a453f072dc383f5328afbe"
+      - name: Delete precisely the three archived Releases (leave Git tags, commits, and Pages untouched)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          ASSET_SHA: ${{ inputs.asset_manifest_sha }}
+          HISTORY_SHA: ${{ inputs.git_history_manifest_sha }}
+        run: |
+          set -euo pipefail
+          python .github/scripts/retire_legacy_cricket_releases.py --apply \
+            --confirmation "$CONFIRMATION" \
+            --asset-manifest-sha "$ASSET_SHA" \
+            --history-manifest-sha "$HISTORY_SHA"
