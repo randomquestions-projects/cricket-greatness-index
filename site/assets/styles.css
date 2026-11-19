@@ -14,3 +14,10 @@ main{max-width:1430px;margin:auto;padding:35px clamp(18px,3vw,44px) 80px}.hero{p
 .footer{padding:20px 36px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;font-size:10px;color:#81918a}
 @media(max-width:1050px){.trio,.view-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-grid,.mini-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:770px){.sidebar{position:fixed;transform:translateX(-100%);transition:transform .2s ease;box-shadow:4px 0 28px #17382922}.sidebar.open{transform:translateX(0)}.topbar button{display:block}.topbar{font-size:9px;padding:0 14px}main{padding:18px 15px 50px}.hero{padding:19px 0}.trio,.view-grid,.two,.player-grid,.adjustments{grid-template-columns:1fr}.stat-grid,.mini-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.section-head{align-items:start;flex-direction:column}.controls label,.controls input,.controls select{min-width:0;width:100%}.controls label{flex:1 1 150px}.footer{padding:16px;flex-direction:column}.topbadge{font-size:8px}}
+
+/* Three-discipline research previews: bounded display summaries only. */
+.research-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.research-metric-grid div{border:1px solid var(--line);background:#f6faf8;border-radius:8px;padding:13px}
+.research-metric-grid small{display:block;font-size:10px;color:var(--muted)}
+.research-metric-grid b{display:block;font-size:20px;margin-top:4px;color:var(--accent)}
+@media(max-width:880px){.research-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
