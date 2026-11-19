@@ -5,7 +5,14 @@ on:
     paths:
       - 'site/**'
       - '.github/workflows/**'
-      - 'docs/outputs-only-cutover.md'
+      - 'data/**'
+      - 'pipeline/**'
+      - 'research/**'
+      - 'warehouse/**'
+      - 'docs/**'
+      - 'tests/**'
+      - 'README.md'
+      - 'LICENSE-NOTICE.md'
 permissions:
   contents: read
 jobs:
@@ -38,6 +45,20 @@ jobs:
           entry=(root/"index.html").read_text()
           assert entry.index('src="assets/config.js"')<entry.index('src="assets/app.js"')
           print("Public site bundle contains only UI code; no downloadable data files.")
+          PY
+      - name: Fail closed if old private research code or warehouse exports return
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          forbidden=("data","pipeline","research","warehouse","docs")
+          for name in forbidden:
+              assert not Path(name).exists(), f"Private research path leaked in public repository: {name}"
+          allowed={"site",".github","tests","README.md","LICENSE-NOTICE.md",".gitignore"}
+          actual={p.name for p in Path(".").iterdir() if p.name!=".git"}
+          assert actual<=allowed, f"Unexpected public root entries: {sorted(actual-allowed)}"
+          testfiles={p.name for p in Path("tests").iterdir() if p.is_file()}
+          assert testfiles<={"smoke_outputs_only_browser.py","verify_live_outputs_only.py"}
+          print("Public current branch only includes presentation source and security checks.")
           PY
       - name: Browser code syntax
         run: node --check site/assets/app.js
