@@ -1,0 +1,74 @@
+name: Validate staged cricket outputs-only Pages bundle
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/**'
+      - 'docs/outputs-only-cutover.md'
+permissions:
+  contents: read
+jobs:
+  static-privacy-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fail if website exposes a database, ranking JSON, or source files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('site')
+          allowed={"index.html","test-greatness.html","format-greatness.html",
+            ".nojekyll","assets/app.js","assets/styles.css","assets/config.js"}
+          actual={p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
+          assert "index.html" in actual and "assets/config.js" in actual
+          assert actual<=allowed, f"Unapproved assets: {sorted(actual-allowed)}"
+          assert not (root/"data").exists(), "No source files may be copied into Pages"
+          code=(root/"assets/app.js").read_text()
+          assert "CRICKET_OUTPUTS_API_BASE" in code
+          for forbidden in ("data/innings", "data/test-greatness", "data/odi-greatness",
+                            "data/t20i-greatness", ".csv.gz", ".sqlite"):
+              assert forbidden not in code, f"Browser attempts to load raw data: {forbidden}"
+          entry=(root/"index.html").read_text()
+          assert entry.index('src="assets/config.js"')<entry.index('src="assets/app.js"')
+          print("Public site bundle contains only UI code; no downloadable data files.")
+          PY
+      - name: Browser code syntax
+        run: node --check site/assets/app.js
+      - name: Confirm legacy public dataset publishers have been retired
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          names={p.name for p in Path(".github/workflows").glob("*.yml")}
+          assert "refresh-data.yml" not in names
+          for unwanted in ("master-warehouse.yml","scorecard-warehouse.yml",
+                           "warehouse-events.yml","warehouse-references.yml"):
+              assert unwanted not in names, unwanted
+          assert "pages.yml" in names
+          print("No scheduled public source archive publisher remains.")
+          PY
+
+  browser-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install headless browser smoke runtime
+        run: |
+          python -m pip install 'playwright==1.58.0'
+          python -m playwright install --with-deps chromium
+      - name: Exercise every cricket route against verified staging API
+        env:
+          CRICKET_OUTPUTS_API_BASE: ${{ vars.CRICKET_OUTPUTS_API_BASE }}
+        run: python tests/smoke_outputs_only_browser.py
