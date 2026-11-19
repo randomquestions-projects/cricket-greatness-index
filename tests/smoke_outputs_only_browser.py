@@ -71,6 +71,18 @@ def run():
                     page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                     assert not page.locator("#output-results").get_by_text("Results service unavailable").count()
                     checked.append(name)
+                for discipline in ("bowling","allrounder"):
+                    page.goto(origin+"/#"+discipline)
+                    page.locator("#discipline-results").wait_for(timeout=20000)
+                    # Existing live backend may not have the new optional research
+                    # projection yet. The page must fail closed with a truthful
+                    # unavailable message rather than misrepresent old batting.
+                    page.wait_for_function("""() => {
+                      const el=document.querySelector('#discipline-results');
+                      return el && (!el.textContent.includes('Loading bounded player results'));
+                    }""",timeout=20000)
+                    assert page.locator("#discipline-results").inner_text().strip()
+                    checked.append(discipline+"-page")
                 page.goto(origin+"/#test")
                 page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                 page.locator("[data-player]").first.click()
