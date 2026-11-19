@@ -2,15 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Cricket Greatness Lab: one transparent scorecard-era analytical model for Test, ODI and T20I batting greatness, team carry, peak and career value.">
-  <title>Cricket Greatness Lab · Independent Batting Research</title>
+  <meta name="description" content="Cricket Greatness Lab: independent batting, bowling and all-rounder rankings by Test, ODI and T20I with historical coverage and model limitations clearly labelled.">
+  <title>Cricket Greatness Lab · Batting, Bowling &amp; All-Rounders</title>
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
     <a class="brand" href="#overview" aria-label="Cricket Greatness Lab home"><span class="brand-mark">CG<span>·</span></span><span class="brand-text"><strong>Cricket<br>Greatness Lab</strong><small>INDEPENDENT CRICKET ANALYTICS</small></span></a>
-    <div class="nav-title">ANALYSIS</div>
+    <div class="nav-title">DISCIPLINES</div>
+    <nav aria-label="Discipline navigation">
+      <a href="#test" data-view="test"><span class="nav-symbol">◈</span> Batting Rankings</a>
+      <a href="#bowling" data-view="bowling"><span class="nav-symbol">◎</span> Bowling Rankings</a>
+      <a href="#allrounder" data-view="allrounder"><span class="nav-symbol">◇</span> All-Rounder Rankings</a>
+    </nav>
+    <div class="nav-title">FORMATS &amp; ANALYSIS</div>
     <nav id="navigation" aria-label="Main navigation">
       <a href="#overview" data-view="overview"><span class="nav-symbol">◈</span> Overview</a>
       <a href="#test" data-view="test"><span class="nav-symbol">▤</span> Test Cricket</a>
@@ -29,13 +35,13 @@
     <div class="sidebar-bottom"><span class="status-dot"></span> <span id="sidebar-status">Loading verified research data…</span><a href="https://randomquestions-projects.github.io/">← All analytics projects</a></div>
   </aside>
   <div class="workspace">
-    <header class="topbar"><button type="button" id="menu-button" aria-label="Toggle navigation" aria-expanded="false">☰</button><span>CRICKET GREATNESS LAB / <b id="breadcrumb">OVERVIEW</b></span><span class="topbadge">MODEL v0.4 · EXPERIMENTAL</span></header>
+    <header class="topbar"><button type="button" id="menu-button" aria-label="Toggle navigation" aria-expanded="false">☰</button><span>CRICKET GREATNESS LAB / <b id="breadcrumb">OVERVIEW</b></span><span class="topbadge">INDEPENDENT RESEARCH · PROVISIONAL</span></header>
     <main id="content" tabindex="-1">
-      <div id="page-header" class="hero"><div class="eyebrow">ERA-COMPARABLE BATTING RESEARCH · 1877 → PRESENT</div><h1>Beyond runs and averages.</h1><p>Explore cricket greatness through the same scorecard evidence for every era.</p></div>
+      <div id="page-header" class="hero"><div class="eyebrow">THREE DISCIPLINES · TEST · ODI · T20I</div><h1>Greatness beyond the scorecard.</h1><p>Explore batting, bowling and all-rounders with independent models, source transparency and honest coverage limitations.</p></div>
       <div id="research-notice" role="status" class="research-notice">Loading scorecard-era research scores…</div>
       <div id="page-body"></div>
     </main>
-    <footer class="footer"><span>CRICKET GREATNESS LAB · RESEARCH v0.4</span><span>Cricsheet open records (ODC-BY) · Historical batting aggregates (reuse rights unverified) · No official all-time certification</span></footer>
+    <footer class="footer"><span>CRICKET GREATNESS LAB · BATTING / BOWLING / ALL-ROUNDERS</span><span>Cricsheet ODC-BY modern displays · Restricted historic data stays private · No certified all-time completeness</span></footer>
   </div>
 </div>
 <!-- Generated approved public API origin; never a private S3 URL. -->
