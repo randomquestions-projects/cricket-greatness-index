@@ -5,6 +5,7 @@ and aborts if a server unexpectedly responds HTTP 200.
 """
 from __future__ import annotations
 import json
+import time
 import urllib.error
 import urllib.request
 
@@ -39,9 +40,26 @@ def main():
     assert app_code==200 and b"CRICKET_OUTPUTS_API_BASE" in app
     assert b"data/innings.json.gz" not in app
     failures={}
+    status_report={}
     for file in OLD_DOWNLOADS:
         status,_=response(file,method="HEAD")
+        if status==503:
+            # GitHub Pages edge can reject HEAD. Test GET without reading any
+            # response body, so no source file is downloaded by this test.
+            for attempt in range(3):
+                request=urllib.request.Request(ROOT+file,method="GET",headers={
+                    "Cache-Control":"no-cache","Range":"bytes=0-0",
+                    "User-Agent":"cricket-output-only-release-validator/1.0"})
+                try:
+                    with urllib.request.urlopen(request,timeout=20) as resp:
+                        status=resp.status
+                except urllib.error.HTTPError as err:
+                    status=err.code
+                if status!=503:break
+                time.sleep(2)
+        status_report[file]=status
         if status!=404:failures[file]=status
+    print("Old public download status verification:",json.dumps(status_report,sort_keys=True))
     assert not failures, f"Legacy source downloads still accessible or unexpected statuses: {failures}"
     print(json.dumps({
        "status":"PUBLIC_CRICKET_PAGES_OUTPUTS_ONLY_VERIFIED",
