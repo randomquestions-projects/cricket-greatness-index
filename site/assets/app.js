@@ -6,18 +6,23 @@ const FORMATS=['test','odi','t20i'], COMBOS=['test_odi','all_three'], ALL=[...FO
 const LABEL={overview:'Overview',test:'Test Cricket',odi:'One-Day Internationals',
  t20i:'T20 Internationals',test_odi:'Tests + ODIs',all_three:'All Three Formats',
  bowling:'Bowling Rankings',allrounder:'All-Rounder Rankings',
- compare:'Batter Comparison',matches:'Match Explorer',
+ compare:'Player Comparison',matches:'Match Explorer',
  methodology:'Index Methodology',coverage:'Data & Coverage'};
 const METRICS={jawsPercentile:'JAWS-inspired percentile',quality:'Era-adjusted quality',
  teamCarry:'Team carry',careerGreatness:'Career greatness',peakQuality:'Peak quality'};
+const DISCIPLINES={batting:'Batting',bowling:'Bowling',allrounder:'All-Rounders'};
+function storedDiscipline(){
+ try{const value=localStorage.getItem('cricket-discipline');
+     return DISCIPLINES[value]?value:'batting'}catch{return 'batting'}
+}
 const E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const N=(v,d=1)=>v==null||!Number.isFinite(+v)?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
 const I=v=>N(v,0);
-const state={view:'overview',format:'test',metric:'jawsPercentile',search:'',country:'',
+const state={view:'overview',discipline:storedDiscipline(),format:'test',metric:'jawsPercentile',search:'',country:'',
  page:0,matchFormat:'odi',matchPage:0,matchSearch:'',matchOpposition:'',
- first:null,second:null,compareFormat:'test',compareSearch:'',activeCompareSide:'first',
+ first:null,second:null,compareFormat:'test',compareSearch:'',compareCandidates:[],activeCompareSide:'first',
  disciplineFormat:'test',disciplineMetric:'greatness',disciplineSearch:'',disciplineCountry:'',disciplinePage:0};
-let meta=null,requestSerial=0,searchTimer;
+let meta=null,disciplineMeta=null,requestSerial=0,searchTimer;
 function apiURL(path,params={}){
  const base=String(window.CRICKET_OUTPUTS_API_BASE||'');
  let u;try{u=new URL(base)}catch{throw new Error('Results API is not configured')}
@@ -46,6 +51,7 @@ function currentRoute(){
 function navigation(v){
  $('#breadcrumb').textContent=LABEL[v].toUpperCase();
  document.querySelectorAll('[data-view]').forEach(a=>a.classList.toggle('active',a.dataset.view===v));
+ const selector=$('#discipline-selector');if(selector)selector.value=state.discipline;
  $('#sidebar').classList.remove('open');$('#menu-button').setAttribute('aria-expanded','false');
 }
 function panel(title,body){return '<section class="section"><div class="section-head"><h2>'+E(title)+'</h2></div>'+body+'</section>'}
@@ -53,28 +59,53 @@ function table(head,rows){
  return '<div class="table-scroller"><table><thead><tr>'+head.map(s=>'<th>'+E(s)+'</th>').join('')+
  '</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
-function overview(){
+async function loadDisciplineMeta(){
+ if(!disciplineMeta)disciplineMeta=await get('disciplines');
+ if(disciplineMeta.schemaVersion!=='cricket-discipline-projection-v1')
+   throw new Error('Discipline API schema not approved');
+ return disciplineMeta;
+}
+function formatOptions(current){
+ return ALL.map(f=>'<option value="'+E(f)+'"'+(f===current?' selected':'')+'>'+E(LABEL[f])+'</option>').join('');
+}
+async function overview(){
+ const discipline=state.discipline,modern=discipline!=='batting';
  hero('Who was <em>truly</em> the greatest?',
-   'Explore era-adjusted Test, ODI and T20I batting research. No downloadable historical scorecards or raw match database.');
- const formats=FORMATS.map(f=>meta.formats[f]||{});
- const blocks=[
- ['Tests analyzed',formats[0].observedDistinctMatches],['ODIs analyzed',formats[1].observedDistinctMatches],
- ['T20Is analyzed',formats[2].observedDistinctMatches],
- ['Eligible batters',formats.map(f=>I(f.qualifiedPlayers)).join(' / ')]
- ].map(([label,value])=>'<div class="stat"><small>'+label+'</small><strong>'+E(typeof value==='string'?value:I(value))+'</strong></div>').join('');
- const leaders=FORMATS.map(f=>{
-  const p=(meta.leaders[f]||[])[0];
-  return '<a class="leader" href="#'+f+'"><small>'+E(LABEL[f])+'</small><h3>'+
-  E(p?.name||'Unavailable')+'</h3><p>JAWS percentile '+N(p?.jawsPercentile)+
-  ' · '+I(p?.innings)+' innings</p><span>Open ranking →</span></a>';
+  (modern?'Explore provisional '+DISCIPLINES[discipline].toLowerCase()+
+   ' scores using modern Cricsheet-qualified player identities.':
+   'Explore batting greatness across Tests, ODIs and T20Is, with independent era-normalized research.'));
+ let leaders={},formats={};
+ if(modern){
+   try{const source=await loadDisciplineMeta();leaders=source.leaders[discipline]||{};
+       formats=source.formats[discipline]||{}}
+   catch(e){showError($('#page-body'),e);return}
+ }else{leaders=meta.leaders||{};formats=meta.formats||{}}
+ const blocks=FORMATS.map(fmt=>['Eligible '+(fmt==='test'?'Test':fmt==='odi'?'ODI':'T20I')+' players',
+   formats[fmt]?.qualifiedPlayers]);
+ blocks.push([modern?'Research scope':'Observed Test matches',
+   modern?'Modern Cricsheet only':meta.formats?.test?.observedDistinctMatches]);
+ const tiles=blocks.map(([label,value])=>'<div class="stat"><small>'+E(label)+'</small><strong>'+
+    E(typeof value==='string'?value:I(value))+'</strong></div>').join('');
+ const leaderCards=FORMATS.map(fmt=>{
+   const p=(leaders[fmt]||[])[0];
+   const mainScore=modern?N(p?.greatness):N(p?.jawsPercentile);
+   return '<a class="leader" href="#'+fmt+'"><small>'+E(LABEL[fmt])+'</small>'+
+   '<h3>'+E(p?.name||'Unavailable')+'</h3><p>'+E(modern?'Greatness index':'JAWS percentile')+
+   ' '+mainScore+' · '+I(p?.innings)+' innings</p><span>View ranking →</span></a>';
  }).join('');
- const tiles=['bowling','allrounder',...ALL].map(f=>'<a class="view-card" href="#'+f+'"><small>ANALYSIS</small>'+
- '<strong>'+E(LABEL[f])+'</strong><p>View validated research results and compare historic greats.</p>'+
- '<span>Explore →</span></a>').join('');
- $('#page-body').innerHTML='<div class="stat-grid">'+blocks+'</div>'+
- panel('Leading batters by format','<div class="trio">'+leaders+'</div>')+
- panel('Explore the research','<div class="view-grid">'+tiles+'</div>')+
- '<p class="note">Historic research remains private. Bowling and all-rounder releases use only modern Cricsheet-derived display summaries until older coverage, identities and rights pass independent review. Rankings are not official all-time records.</p>';
+ const cards=ALL.map(fmt=>'<a class="view-card" href="#'+fmt+'"><small>'+
+   E(DISCIPLINES[discipline].toUpperCase())+'</small><strong>'+E(LABEL[fmt])+'</strong>'+
+   '<p>'+E(COMBOS.includes(fmt)?'Cross-format comparisons for players eligible in every selected format.':
+      'Explore ranked player summaries, profiles and model evidence.')+'</p>'+
+   '<span>Explore →</span></a>').join('');
+ $('#page-body').innerHTML='<div class="stat-grid">'+tiles+'</div>'+
+   panel('Leaders by format · '+DISCIPLINES[discipline],'<div class="trio">'+leaderCards+'</div>')+
+   panel('Explore '+DISCIPLINES[discipline].toLowerCase()+' rankings',
+     '<div class="view-grid">'+cards+'</div>')+
+   '<p class="note">'+(modern?
+      'Bowling and all-rounder rankings are modern Cricsheet-only provisional outputs. Combined formats require the same verified provider ID in each constituent format. Historical all-era certification is incomplete.':
+      'Batting rankings use the preserved, previously validated model outputs. Historic source data stays private; historical all-era completeness is not certified.')+
+   '</p>';
 }
 const D_METRICS={
  bowling:{greatness:'Greatness index',quality:'Era & opponent peer quality',
