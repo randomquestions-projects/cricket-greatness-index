@@ -15,6 +15,7 @@ import re
 import shutil
 import tempfile
 import threading
+import time
 from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
@@ -48,11 +49,22 @@ def run():
                 context=browser.new_context(viewport={"width":1280,"height":800})
                 errors=[]
                 api_requests=[]
+                request_lock=threading.Lock()
+                last_request=[0.0]
                 def forward(route):
                     if not route.request.url.startswith(api+"/v1/cricket/"):
                         raise AssertionError("Browser attempted external unapproved API fetch")
+                    with request_lock:
+                        gap=0.5-(time.monotonic()-last_request[0])
+                        if gap>0:time.sleep(gap)
+                        last_request[0]=time.monotonic()
+                        reply=route.fetch(timeout=25000)
+                        for attempt in range(2):
+                            if reply.status!=429:break
+                            time.sleep(1.0*(attempt+1))
+                            last_request[0]=time.monotonic()
+                            reply=route.fetch(timeout=25000)
                     api_requests.append(route.request.url)
-                    reply=route.fetch(timeout=25000)
                     if reply.status!=200 and not ("/v1/cricket/discipline-" in route.request.url and reply.status in (404,503)):
                         raise AssertionError("Live API failed: "+str(reply.status)+" route="+route.request.url.split("?",1)[0])
                     headers=dict(reply.headers)
