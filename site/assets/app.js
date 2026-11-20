@@ -20,9 +20,9 @@ const N=(v,d=1)=>v==null||!Number.isFinite(+v)?'—':Number(v).toLocaleString('e
 const I=v=>N(v,0);
 const state={view:'overview',discipline:storedDiscipline(),format:'test',metric:'jawsPercentile',search:'',country:'',
  page:0,matchFormat:'odi',matchPage:0,matchSearch:'',matchOpposition:'',
- first:null,second:null,compareFormat:'test',compareSearch:'',compareCandidates:[],activeCompareSide:'first',
+ first:null,second:null,compareFormat:'test',compareSearch:'',compareCandidates:[],comparePicked:{first:null,second:null},activeCompareSide:'first',
  disciplineFormat:'test',disciplineMetric:'greatness',disciplineSearch:'',disciplineCountry:'',disciplinePage:0};
-let meta=null,disciplineMeta=null,requestSerial=0,searchTimer;
+let meta=null,disciplineMeta=null,requestSerial=0,compareSearchSerial=0,searchTimer;
 function apiURL(path,params={}){
  const base=String(window.CRICKET_OUTPUTS_API_BASE||'');
  let u;try{u=new URL(base)}catch{throw new Error('Results API is not configured')}
@@ -278,37 +278,97 @@ async function showProfile(fmt,id,selector='#output-profile'){
       if(area.isConnected)area.innerHTML=profileCard(data.player,fmt);
  }catch(e){if(area.isConnected)showError(area,e)}
 }
+function comparisonQuery(){
+ const params={format:state.compareFormat,search:state.compareSearch,page:0};
+ if(state.discipline==='batting')return get('rankings',params);
+ return get('discipline-rankings',{...params,discipline:state.discipline});
+}
+function comparisonOptions(side){
+ const entries=[...state.compareCandidates];
+ const chosen=state.comparePicked[side];
+ if(chosen&&!entries.some(p=>p.playerId===chosen.playerId))entries.unshift(chosen);
+ const current=state[side]||'';
+ return '<option value="">Select '+(side==='first'?'first':'second')+' player</option>'+
+ entries.map(p=>'<option value="'+E(p.playerId)+'"'+
+  (p.playerId===current?' selected':'')+'>'+E(p.name)+' · '+E(p.team)+'</option>').join('');
+}
+function updateComparisonSelects(){
+ for(const side of ('first,second').split(',')){
+   const field=$('#compare-'+side+'-select');
+   if(field)field.innerHTML=comparisonOptions(side);
+ }
+}
+async function comparisonProfiles(){
+ const discipline=state.discipline,fmt=state.compareFormat;
+ for(const side of ('first,second').split(',')){
+   const area=$('#compare-'+side+'-result');
+   if(!area)continue;
+   const pid=state[side];
+   if(!pid){area.innerHTML='<div class="panel empty-compare">Choose a player above to compare.</div>';continue}
+   if(discipline==='batting')showProfile(fmt,pid,'#compare-'+side+'-result');
+   else disciplineProfile(discipline,pid,fmt,'#compare-'+side+'-result');
+ }
+}
+function chooseComparison(side,id){
+ if(!['first','second'].includes(side))return;
+ state[side]=id||null;
+ const selected=state.compareCandidates.find(p=>p.playerId===id);
+ if(selected)state.comparePicked[side]=selected;
+ if(!id)state.comparePicked[side]=null;
+ updateComparisonSelects();
+ comparisonProfiles();
+}
 async function compare(){
- hero('Batter <em>Comparison Lab</em>',
- 'Compare model-derived cricket research across eras without accessing the underlying source database.');
+ hero('Player <em>Comparison Lab</em>',
+  'Compare two players using consistent '+DISCIPLINES[state.discipline].toLowerCase()+
+  ' scores for the selected format and model. Cross-format scores use normalized percentiles.');
  const fmt=state.compareFormat;
  $('#page-body').innerHTML='<section class="section"><div class="controls">'+
- '<label>Format<select id="compare-format">'+ALL.map(f=>'<option value="'+f+'"'+
- (fmt===f?' selected':'')+'>'+E(LABEL[f])+'</option>').join('')+'</select></label>'+
- '<label>Find a batter<input id="compare-search" value="'+E(state.compareSearch)+
- '" placeholder="Search players…"></label></div><div id="compare-hits" class="panel">'+
- 'Search by player name to choose a comparison.</div>'+
- '<div class="controls"><button id="compare-side-first" type="button">Select first</button>'+
- '<button id="compare-side-second" type="button">Select second</button></div>'+
+ '<label>Ranking type<select id="compare-discipline">'+
+ Object.entries(DISCIPLINES).map(([key,label])=>'<option value="'+E(key)+'"'+
+  (state.discipline===key?' selected':'')+'>'+E(label)+'</option>').join('')+
+ '</select></label>'+
+ '<label>Format<select id="compare-format">'+formatOptions(fmt)+'</select></label>'+
+ '<label>Find players<input id="compare-search" value="'+E(state.compareSearch)+
+ '" placeholder="Search names or countries…"></label></div>'+
+ '<div class="comparison-selects">'+
+ '<label>First player<select id="compare-first-select">'+comparisonOptions('first')+'</select></label>'+
+ '<label>Second player<select id="compare-second-select">'+comparisonOptions('second')+'</select></label>'+
+ '</div><div id="compare-hits" class="panel">Searching eligible player summaries…</div>'+
+ '<div class="controls comparison-side-buttons"><span>Assign a search result to:</span>'+
+ '<button id="compare-side-first" type="button"'+(state.activeCompareSide==='first'?' class="selected"':'')+'>First player</button>'+
+ '<button id="compare-side-second" type="button"'+(state.activeCompareSide==='second'?' class="selected"':'')+'>Second player</button></div>'+
  '<div class="player-grid"><div id="compare-first-result"></div>'+
  '<div id="compare-second-result"></div></div></section>';
- if(state.first)showProfile(fmt,state.first,'#compare-first-result');
- if(state.second)showProfile(fmt,state.second,'#compare-second-result');
+ await comparisonProfiles();
  if(!state.compareSearch){
-   state.compareSearch=(meta.leaders[fmt]||[])[0]?.name||'';
+   try{
+     const leaders=state.discipline==='batting'?meta.leaders:
+       (await loadDisciplineMeta()).leaders[state.discipline];
+     state.compareSearch=(leaders[fmt]||[])[0]?.name||'';
+     const input=$('#compare-search');
+     if(input)input.value=state.compareSearch;
+   }catch(e){showError($('#compare-hits'),e);return}
  }
  searchComparison();
 }
 async function searchComparison(){
  const area=$('#compare-hits');if(!area)return;
+ const serial=++compareSearchSerial,discipline=state.discipline,fmt=state.compareFormat;
  try{
-  const d=await get('rankings',{format:state.compareFormat,
-         search:state.compareSearch,page:0});
-  if(!area.isConnected)return;
-  area.innerHTML=(d.items.length?d.items.map(p=>'<button class="text-link" type="button" '+
-  'data-compare-id="'+E(p.playerId)+'">'+E(p.name)+' · '+E(p.team)+'</button>').join(' · '):
-  'No matching batters')+'<p class="note">Choose first or second, then select a player.</p>';
- }catch(e){showError(area,e)}
+   const d=await comparisonQuery();
+   if(serial!==compareSearchSerial||!area.isConnected||state.discipline!==discipline||
+      state.compareFormat!==fmt)return;
+   const items=d.items||[];
+   state.compareCandidates=items;
+   updateComparisonSelects();
+   area.innerHTML=(items.length?items.map(p=>'<button class="text-link comparison-hit" type="button" '+
+   'data-compare-id="'+E(p.playerId)+'">'+E(p.name)+' · '+E(p.team)+'</button>').join(''):
+   '<p>No eligible players found for this search and format.</p>')+
+   '<p class="note">Choose a player in each dropdown, or assign a search result to the highlighted side.</p>';
+ }catch(e){
+   if(serial===compareSearchSerial)showError(area,e);
+ }
 }
 async function matches(){
  hero('Match <em>Explorer</em>',
