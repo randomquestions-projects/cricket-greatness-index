@@ -34,10 +34,19 @@ function apiURL(path,params={}){
  return target.toString();
 }
 async function get(path,params={}){
- const res=await fetch(apiURL(path,params),{cache:'no-store',headers:{Accept:'application/json'}});
- if(!res.ok)throw new Error('Results service unavailable ('+res.status+')');
- const data=await res.json();
- return data;
+ const url=apiURL(path,params);
+ for(let attempt=0;attempt<3;attempt++){
+  const res=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+  if(res.status===429&&attempt<2){
+   // The public API intentionally throttles aggressive browsing. Back off,
+   // without bypassing any request or data-export controls.
+   await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+   continue;
+  }
+  if(!res.ok)throw new Error('Results service unavailable ('+res.status+')');
+  return res.json();
+ }
+ throw new Error('Results service temporarily busy');
 }
 function hero(title,desc){
  $('#page-header').innerHTML='<div class="eyebrow">INDEPENDENT CRICKET RESEARCH · OUTPUTS ONLY</div>'+
