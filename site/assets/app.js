@@ -6,16 +6,16 @@ const FORMATS=['test','odi','t20i'], COMBOS=['test_odi','all_three'], ALL=[...FO
 const LABEL={overview:'Overview',test:'Test Cricket',odi:'One-Day Internationals',
  t20i:'T20 Internationals',test_odi:'Tests + ODIs',all_three:'All Three Formats',
  bowling:'Bowling Rankings',allrounder:'All-Rounder Rankings',
- compare:'Batter Comparison',matches:'Match Explorer',
+ compare:'Player Comparison',matches:'Match Explorer',
  methodology:'Index Methodology',coverage:'Data & Coverage'};
 const METRICS={jawsPercentile:'JAWS-inspired percentile',quality:'Era-adjusted quality',
  teamCarry:'Team carry',careerGreatness:'Career greatness',peakQuality:'Peak quality'};
 const E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const N=(v,d=1)=>v==null||!Number.isFinite(+v)?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
 const I=v=>N(v,0);
-const state={view:'overview',format:'test',metric:'jawsPercentile',search:'',country:'',
+const state={discipline:'batting',view:'overview',format:'test',metric:'jawsPercentile',search:'',country:'',
  page:0,matchFormat:'odi',matchPage:0,matchSearch:'',matchOpposition:'',
- first:null,second:null,compareFormat:'test',compareSearch:'',activeCompareSide:'first',
+ first:null,second:null,firstSearch:'',secondSearch:'',compareFormat:'test',
  disciplineFormat:'test',disciplineMetric:'greatness',disciplineSearch:'',disciplineCountry:'',disciplinePage:0};
 let meta=null,requestSerial=0,searchTimer;
 function apiURL(path,params={}){
@@ -45,6 +45,7 @@ function currentRoute(){
 }
 function navigation(v){
  $('#breadcrumb').textContent=LABEL[v].toUpperCase();
+ $('#global-discipline').value=state.discipline;
  document.querySelectorAll('[data-view]').forEach(a=>a.classList.toggle('active',a.dataset.view===v));
  $('#sidebar').classList.remove('open');$('#menu-button').setAttribute('aria-expanded','false');
 }
@@ -53,28 +54,51 @@ function table(head,rows){
  return '<div class="table-scroller"><table><thead><tr>'+head.map(s=>'<th>'+E(s)+'</th>').join('')+
  '</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
-function overview(){
- hero('Who was <em>truly</em> the greatest?',
-   'Explore era-adjusted Test, ODI and T20I batting research. No downloadable historical scorecards or raw match database.');
- const formats=FORMATS.map(f=>meta.formats[f]||{});
- const blocks=[
- ['Tests analyzed',formats[0].observedDistinctMatches],['ODIs analyzed',formats[1].observedDistinctMatches],
- ['T20Is analyzed',formats[2].observedDistinctMatches],
- ['Eligible batters',formats.map(f=>I(f.qualifiedPlayers)).join(' / ')]
- ].map(([label,value])=>'<div class="stat"><small>'+label+'</small><strong>'+E(typeof value==='string'?value:I(value))+'</strong></div>').join('');
- const leaders=FORMATS.map(f=>{
-  const p=(meta.leaders[f]||[])[0];
-  return '<a class="leader" href="#'+f+'"><small>'+E(LABEL[f])+'</small><h3>'+
-  E(p?.name||'Unavailable')+'</h3><p>JAWS percentile '+N(p?.jawsPercentile)+
-  ' · '+I(p?.innings)+' innings</p><span>Open ranking →</span></a>';
- }).join('');
- const tiles=['bowling','allrounder',...ALL].map(f=>'<a class="view-card" href="#'+f+'"><small>ANALYSIS</small>'+
- '<strong>'+E(LABEL[f])+'</strong><p>View validated research results and compare historic greats.</p>'+
- '<span>Explore →</span></a>').join('');
- $('#page-body').innerHTML='<div class="stat-grid">'+blocks+'</div>'+
- panel('Leading batters by format','<div class="trio">'+leaders+'</div>')+
- panel('Explore the research','<div class="view-grid">'+tiles+'</div>')+
- '<p class="note">Historic research remains private. Bowling and all-rounder releases use only modern Cricsheet-derived display summaries until older coverage, identities and rights pass independent review. Rankings are not official all-time records.</p>';
+async function overview(){
+ const current=state.discipline,serial=++requestSerial;
+ const name={batting:'Batting',bowling:'Bowling',allrounder:'All-Rounder'}[current];
+ hero('Cricket <em>'+E(name)+' Greatness</em>',
+  'Explore independent Test, ODI and T20I research using available derived statistics; rankings remain provisional, with different historical coverage by discipline.');
+ $('#page-body').innerHTML='<div class="panel">Loading '+E(name.toLowerCase())+' research overview…</div>';
+ try{
+  let formats=[],leaders={},numbers=[];
+  if(current==='batting'){
+   formats=FORMATS.map(f=>meta.formats[f]||{});
+   leaders=meta.leaders||{};
+   numbers=[
+    ['Tests observed',formats[0].observedDistinctMatches],
+    ['ODIs observed',formats[1].observedDistinctMatches],
+    ['T20Is observed',formats[2].observedDistinctMatches],
+    ['Eligible batters',formats.map(f=>I(f.qualifiedPlayers)).join(' / ')]];
+  }else{
+   const d=await get('disciplines');
+   formats=FORMATS.map(f=>d.formats?.[current]?.[f]||{});
+   leaders=d.leaders?.[current]||{};
+   numbers=FORMATS.map((f,i)=>[LABEL[f]+' qualified players',formats[i].qualifiedPlayers]);
+   numbers.push(['Source tier','Modern Cricsheet only']);
+  }
+  if(serial!==requestSerial||state.view!=='overview'||state.discipline!==current)return;
+  const statCards=numbers.map(([label,value])=>'<div class="stat"><small>'+E(label)+'</small><strong>'+
+    E(typeof value==='string'?value:I(value))+'</strong></div>').join('');
+  const top=FORMATS.map(f=>{
+   const p=(leaders[f]||[])[0];
+   return '<a class="leader" href="#'+f+'"><small>'+E(LABEL[f])+'</small><h3>'+
+   E(p?.name||'Unavailable')+'</h3><p>'+(current==='batting'?
+   'JAWS percentile '+N(p?.jawsPercentile):
+   'Provisional score '+N(p?.greatness))+' · '+I(p?.innings)+' innings</p>'+
+   '<span>Open '+E(name.toLowerCase())+' ranking →</span></a>';
+  }).join('');
+  const tiles=ALL.map(f=>'<a class="view-card" href="#'+f+'"><small>'+E(name.toUpperCase())+' ANALYSIS</small>'+
+   '<strong>'+E(LABEL[f])+'</strong><p>Explore '+E(name.toLowerCase())+
+   ' results for this format.</p><span>Explore →</span></a>').join('');
+  $('#page-body').innerHTML='<div class="stat-grid">'+statCards+'</div>'+
+    panel('Leading '+E(name.toLowerCase())+' players by format','<div class="trio">'+top+'</div>')+
+    panel('Explore '+E(name.toLowerCase())+' research','<div class="view-grid">'+tiles+'</div>')+
+    '<p class="note">'+(current==='batting'?
+      'Published batting remains the previously validated derived snapshot; new historical rebuild comparisons are under review.':
+      'New bowling and all-rounder rankings use only modern Cricsheet source-qualified identities. Historical all-era rankings are not yet certified.')+
+    '</p>';
+ }catch(e){if(serial===requestSerial)showError($('#page-body'),e)}
 }
 const D_METRICS={
  bowling:{greatness:'Greatness index',quality:'Era & opponent peer quality',
@@ -82,95 +106,91 @@ const D_METRICS={
  allrounder:{greatness:'All-rounder index',batting:'Batting percentile',
              bowling:'Bowling percentile',runs:'Runs',wickets:'Wickets'}
 };
-function disciplineForm(discipline){
- const formatOptions=FORMATS.map(f=>'<option value="'+f+'"'+(f===state.disciplineFormat?' selected':'')+'>'+E(LABEL[f])+'</option>').join('');
- const metricOptions=Object.entries(D_METRICS[discipline]).map(([key,label])=>
-   '<option value="'+E(key)+'"'+(key===state.disciplineMetric?' selected':'')+'>'+E(label)+'</option>').join('');
- return '<div class="controls">'+
- '<label>Format<select id="discipline-format">'+formatOptions+'</select></label>'+
- '<label>Rank by<select id="discipline-metric">'+metricOptions+'</select></label>'+
- '<label>Search player<input id="discipline-search" placeholder="Player or country" value="'+E(state.disciplineSearch)+'"></label>'+
- '<label>Country<input id="discipline-country" placeholder="Country" value="'+E(state.disciplineCountry)+'"></label></div>';
-}
-async function disciplineRanking(discipline){
+async function disciplineRanking(fmt){
+ const discipline=state.discipline;
  if(!D_METRICS[discipline])return;
  if(!D_METRICS[discipline][state.disciplineMetric])state.disciplineMetric='greatness';
- const serial=++requestSerial;
+ const serial=++requestSerial,metric=state.disciplineMetric;
  const active=document.activeElement?.id||'';
  const caret=(active==='discipline-search'||active==='discipline-country')?
     document.activeElement.selectionStart:null;
- const heading=discipline==='bowling'?'Bowling':'All-Rounder';
- hero(heading+' <em>Greatness Index</em>',
-  'Experimental Test, ODI and T20I player rankings based on modern Cricsheet-derived summaries. Historical all-time coverage is not yet certified.');
- $('#page-body').innerHTML='<div class="callout">Research preview · Modern Cricsheet records only. The older historical bowling archive and unverified cross-source player identities are excluded from this public ranking.</div>'+
- panel('Explore '+heading+' rankings',disciplineForm(discipline)+
-    '<div id="discipline-results" class="panel">Loading bounded player results…</div>'+
-    '<div id="discipline-profile"></div>');
- if(caret!==null){const field=$('#'+active);if(field){
-    field.focus();field.setSelectionRange(caret,caret)}}
+ const name=discipline==='bowling'?'Bowling':'All-Rounder';
+ hero(E(LABEL[fmt])+' <em>'+name+' Greatness</em>',
+  'Rank, search and inspect source-approved player summaries; never raw batting or bowling archives.');
+ const metricOptions=Object.entries(D_METRICS[discipline]).map(([key,label])=>
+   '<option value="'+E(key)+'"'+(key===metric?' selected':'')+'>'+E(label)+'</option>').join('');
+ $('#page-body').innerHTML='<div class="callout">Provisional '+E(name.toLowerCase())+
+   ' research · Modern Cricsheet only · Historical player identities are not fully reconciled.'+
+   (COMBOS.includes(fmt)?' Combined rankings require the same verified provider ID in every selected format and average within-format metric percentiles.':'')+
+   '</div><section class="section"><div class="controls">'+
+   '<label>Rank by<select id="discipline-metric">'+metricOptions+'</select></label>'+
+   '<label>Search player<input id="discipline-search" placeholder="Name or country" value="'+E(state.disciplineSearch)+'"></label>'+
+   '<label>Country<input id="discipline-country" placeholder="Filter country" value="'+E(state.disciplineCountry)+'"></label>'+
+   '</div><div id="discipline-results" class="panel">Loading ranking results…</div></section>'+
+   '<section class="section"><div id="discipline-profile"></div></section>';
+ if(caret!==null){const el=$('#'+active);if(el){el.focus();el.setSelectionRange(caret,caret)}}
  try{
-  const result=await get('discipline-rankings',{discipline,
-     format:state.disciplineFormat,metric:state.disciplineMetric,
-     search:state.disciplineSearch,country:state.disciplineCountry,
-     page:state.disciplinePage});
-  if(serial!==requestSerial||state.view!==discipline)return;
+  const result=await get('discipline-rankings',{discipline,format:fmt,metric,
+      search:state.disciplineSearch,country:state.disciplineCountry,
+      page:state.disciplinePage});
+  if(serial!==requestSerial||state.view!==fmt||state.discipline!==discipline)return;
   if(result.schemaVersion!=='cricket-discipline-projection-v1')
-    throw new Error('Research result schema not approved');
-  const headers=discipline==='bowling'?
-    ['Rank','Bowler / country',D_METRICS[discipline][state.disciplineMetric],
+      throw new Error('Unexpected research schema');
+  const head=discipline==='bowling'?
+    ['Rank','Bowler / country',D_METRICS[discipline][metric],
      'Innings','Wickets','Quality','Career','Peak']:
-    ['Rank','All-rounder / country',D_METRICS[discipline][state.disciplineMetric],
+    ['Rank','All-rounder / country',D_METRICS[discipline][metric],
      'Batting innings','Runs','Wickets','Batting %ile','Bowling %ile'];
-  const key=state.disciplineMetric;
   const rows=(result.items||[]).map((p,i)=>{
-    const cols=discipline==='bowling'?
+   const cols=discipline==='bowling'?
       [I(p.innings),I(p.wickets),N(p.quality),N(p.career),N(p.peak)]:
       [I(p.innings),I(p.runs),I(p.wickets),N(p.batting),N(p.bowling)];
-    return '<tr><td>'+I(result.page*result.pageSize+i+1)+'</td><td>'+
+   return '<tr><td>'+I(result.page*result.pageSize+i+1)+'</td><td>'+
      '<button class="text-link" data-discipline-player="'+E(p.playerId)+'">'+E(p.name)+
      '</button><span class="team">'+E(p.team)+'</span></td><td class="figure">'+
-     N(p[key])+'</td>'+cols.map(v=>'<td>'+E(v)+'</td>').join('')+'</tr>';
+     N(p[metric])+'</td>'+cols.map(x=>'<td>'+E(x)+'</td>').join('')+'</tr>';
   });
   const paging='<div class="pager"><button data-discipline-page="-1"'+
     (result.page===0?' disabled':'')+'>← Previous</button><span>Page '+
-    (result.page+1)+' · '+I(result.total)+' players</span>'+
+    (result.page+1)+' · '+I(result.total)+' eligible players</span>'+
     '<button data-discipline-page="1"'+
     ((result.page+1)*result.pageSize>=result.total?' disabled':'')+'>Next →</button></div>';
-  $('#discipline-results').innerHTML=
-    (rows.length?table(headers,rows):'<p>No eligible players in this filter.</p>')+paging+
-    '<p class="note">Per-format within-cohort experimental model output. Click a player to review permitted summary metrics; no raw scorecards or archives are served.</p>';
- }catch(err){
-  if(serial!==requestSerial)return;
-  const area=$('#discipline-results');
-  if(area)area.innerHTML='<div class="callout">Bowling and all-rounder results are being connected to their verified private Gold deployment. Batting rankings and Match Explorer remain available. This view does not invent rankings while the API is unavailable.</div>';
- }
+  $('#discipline-results').innerHTML=(rows.length?table(head,rows):
+    '<p>No qualified players match these filters.</p>')+paging+
+    '<p class="note">Selected player names open limited derived statistics. Rankings are provisional.'+
+    (COMBOS.includes(fmt)?' Combined score columns are normalized percentiles, not raw-format values.':'')+'</p>';
+ }catch(err){if(serial===requestSerial)showError($('#discipline-results'),err)}
 }
-async function disciplineProfile(discipline,playerId){
- const area=$('#discipline-profile');if(!area)return;
+
+function disciplineCard(p,fmt,discipline){
+ if(!p)return '<div class="panel">Player not available in this discipline and format.</div>';
+ const columns=discipline==='bowling'?
+   [['Greatness',p.greatness],['Quality',p.quality],['Career',p.career],
+    ['Peak',p.peak],['Wickets',p.wickets],['Innings',p.innings],
+    ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate]]:
+   [['All-rounder index',p.greatness],['Batting percentile',p.batting],
+    ['Bowling percentile',p.bowling],['Runs',p.runs],['Wickets',p.wickets],
+    ['Batting innings',p.battingInnings??p.innings],['Bowling innings',p.bowlingInnings]];
+ return '<article class="player-card"><small>'+E(p.team)+' · '+E(LABEL[fmt])+
+   '</small><h3>'+E(p.name)+'</h3><div class="research-metric-grid">'+
+   columns.map(([k,v])=>'<div><small>'+E(k)+'</small><b>'+N(v)+'</b></div>').join('')+
+   '</div><p class="note">Provisional '+E(discipline==='bowling'?'bowling':'all-rounder')+
+   ' research from modern-only records.'+
+   (COMBOS.includes(fmt)?' Combined scores are within-format normalized percentiles.':'')+
+   '</p></article>';
+}
+async function disciplineProfile(discipline,fmt,id,selector='#discipline-profile'){
+ const area=$(selector);if(!area)return;
  area.innerHTML='<div class="panel">Loading player summary…</div>';
  try{
-  const payload=await get('discipline-player',{discipline,format:state.disciplineFormat,playerId});
-  if(!area.isConnected||state.view!==discipline)return;
-  const p=payload.player;
-  if(!p)throw new Error('Player no longer available');
-  const fields=discipline==='bowling'?
-   [['Bowling greatness',p.greatness],['Quality',p.quality],
-    ['Career',p.career],['Peak',p.peak],['Wickets',p.wickets],
-    ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate],
-    ['Opponent proxy evidence %',p.opponentEvidencePct]]:
-   [['All-rounder index',p.greatness],['Batting percentile',p.batting],
-    ['Bowling percentile',p.bowling],['Runs',p.runs],
-    ['Wickets',p.wickets],['Batting innings',p.battingInnings],
-    ['Bowling innings',p.bowlingInnings]];
-  area.innerHTML='<article class="player-card"><small>'+E(p.team)+' · '+
-    E(LABEL[state.disciplineFormat])+'</small><h3>'+E(p.name)+'</h3>'+
-    '<div class="research-metric-grid">'+fields.map(([key,value])=>
-    '<div><small>'+E(key)+'</small><b>'+N(value)+'</b></div>').join('')+'</div>'+
-    '<p class="note">Provisional modern-only Cricsheet model; no claim of all-era completeness or independently verified historical identity.</p></article>';
+  const payload=await get('discipline-player',{discipline,format:fmt,playerId:id});
+  if(area.isConnected&&state.discipline===discipline)
+    area.innerHTML=disciplineCard(payload.player,fmt,discipline);
  }catch(err){if(area.isConnected)showError(area,err)}
 }
 
 async function ranking(fmt){
+ if(state.discipline!=='batting')return disciplineRanking(fmt);
  hero(E(LABEL[fmt])+' <em>Batting Greatness</em>',
  'Search, filter and rank model-derived player summaries; raw batting and bowling records remain in private storage.');
  const serial=++requestSerial;
@@ -238,38 +258,68 @@ async function showProfile(fmt,id,selector='#output-profile'){
  }catch(e){if(area.isConnected)showError(area,e)}
 }
 async function compare(){
- hero('Batter <em>Comparison Lab</em>',
- 'Compare model-derived cricket research across eras without accessing the underlying source database.');
- const fmt=state.compareFormat;
+ const discipline=state.discipline,fmt=state.compareFormat,serial=++requestSerial;
+ hero('Player <em>Comparison Lab</em>',
+   'Compare two '+E({batting:'batters',bowling:'bowlers',allrounder:'all-rounders'}[discipline])+
+   ' using the same format, source scope and model.');
+ const slots=['first','second'].map(side=>{
+  const label=side==='first'?'Player 1':'Player 2';
+  return '<div class="comparison-slot"><label>'+label+' search'+
+     '<input id="compare-search-'+side+'" placeholder="Search by player or country…" value="'+
+     E(state[side+'Search']||'')+'"></label><label>'+label+
+     '<select id="compare-player-'+side+'"><option value="">Choose a player…</option></select></label>'+
+     '<p class="hint">Search and select a player to compare their available derived statistics.</p>'+
+     '<div id="compare-'+side+'-result"></div></div>';
+ }).join('');
  $('#page-body').innerHTML='<section class="section"><div class="controls">'+
- '<label>Format<select id="compare-format">'+ALL.map(f=>'<option value="'+f+'"'+
- (fmt===f?' selected':'')+'>'+E(LABEL[f])+'</option>').join('')+'</select></label>'+
- '<label>Find a batter<input id="compare-search" value="'+E(state.compareSearch)+
- '" placeholder="Search players…"></label></div><div id="compare-hits" class="panel">'+
- 'Search by player name to choose a comparison.</div>'+
- '<div class="controls"><button id="compare-side-first" type="button">Select first</button>'+
- '<button id="compare-side-second" type="button">Select second</button></div>'+
- '<div class="player-grid"><div id="compare-first-result"></div>'+
- '<div id="compare-second-result"></div></div></section>';
- if(state.first)showProfile(fmt,state.first,'#compare-first-result');
- if(state.second)showProfile(fmt,state.second,'#compare-second-result');
- if(!state.compareSearch){
-   state.compareSearch=(meta.leaders[fmt]||[])[0]?.name||'';
- }
- searchComparison();
+  '<label>Format<select id="compare-format">'+ALL.map(f=>'<option value="'+f+'"'+
+  (fmt===f?' selected':'')+'>'+E(LABEL[f])+'</option>').join('')+'</select></label>'+
+  '</div><div class="comparison-selects">'+slots+'</div>'+
+  '<p class="note">'+(discipline==='batting'?
+     'Published batting summaries use the historical derived batting model.':
+     'These experimental comparisons cover modern Cricsheet only.')+
+     ' Players can only be compared within the chosen discipline and format.</p></section>';
+ await Promise.all(['first','second'].map(side=>searchComparison(side,serial)));
 }
-async function searchComparison(){
- const area=$('#compare-hits');if(!area)return;
+async function searchComparison(side,renderSerial=requestSerial){
+ const discipline=state.discipline,fmt=state.compareFormat;
+ const select=$('#compare-player-'+side);
+ if(!select)return;
+ select.innerHTML='<option value="">Searching…</option>';
  try{
-  const d=await get('rankings',{format:state.compareFormat,
-         search:state.compareSearch,page:0});
-  if(!area.isConnected)return;
-  area.innerHTML=(d.items.length?d.items.map(p=>'<button class="text-link" type="button" '+
-  'data-compare-id="'+E(p.playerId)+'">'+E(p.name)+' · '+E(p.team)+'</button>').join(' · '):
-  'No matching batters')+'<p class="note">Choose first or second, then select a player.</p>';
- }catch(e){showError(area,e)}
+  const query=state[side+'Search']||'';
+  const params={format:fmt,search:query,page:0};
+  if(discipline!=='batting')params.discipline=discipline;
+  const data=await get(discipline==='batting'?'rankings':'discipline-rankings',params);
+  if(renderSerial!==requestSerial||!select.isConnected||state.discipline!==discipline)return;
+  const selected=state[side];
+  const list=data.items||[];
+  const available=list.some(p=>p.playerId===selected);
+  select.innerHTML='<option value="">Choose '+(side==='first'?'Player 1':'Player 2')+'…</option>'+
+    (selected&&!available?'<option selected value="'+E(selected)+'">Selected player (outside current search)</option>':'')+
+    list.map(p=>'<option value="'+E(p.playerId)+'"'+(p.playerId===selected?' selected':'')+'>'+
+       E(p.name)+' · '+E(p.team)+'</option>').join('');
+  if(selected)showComparisonPlayer(side);
+ }catch(e){if(select.isConnected){select.innerHTML='<option value="">Rankings unavailable</option>';
+   showError($('#compare-'+side+'-result'),e)}}
 }
+function showComparisonPlayer(side){
+ const id=state[side],selector='#compare-'+side+'-result',fmt=state.compareFormat;
+ const area=$(selector);if(!area)return;
+ if(!id){area.innerHTML='<div class="panel">Choose a player above.</div>';return}
+ if(state.discipline==='batting')showProfile(fmt,id,selector);
+ else disciplineProfile(state.discipline,fmt,id,selector);
+}
+
 async function matches(){
+ if(state.discipline!=='batting'){
+  hero('Match <em>Explorer</em>',
+   'The approved match-level Explorer currently supports only batting innings, not bowler spell or all-rounder match breakdowns.');
+  $('#page-body').innerHTML='<div class="callout">This match-level feature is currently batting-only. The '+E(state.discipline)+
+   ' ranking data contains verified derived career summaries, but no approved match-by-match bowling source is exposed through the API. Switch Player Type to Batting to explore innings, or open your selected '+E(state.discipline)+' rankings.</div>'+
+   '<a class="view-card" href="#'+state.format+'"><strong>Open '+E(state.discipline)+' rankings</strong><span>Explore →</span></a>';
+  return;
+ }
  hero('Match <em>Explorer</em>',
  'Bounded Cricsheet-derived batting displays through the private-backed API, never a bulk source file.');
  $('#page-body').innerHTML='<section class="section"><div class="controls">'+
@@ -309,76 +359,127 @@ async function matchDetail(inningsId,playerId){
        '<tr><td>'+E(t.n)+'</td><td>'+I(t.r)+'</td><td>'+I(t.b)+'</td></tr>')));
  }catch(e){showError(area,e)}
 }
-function coverage(){
+async function coverage(){
+ const selected=state.discipline,serial=++requestSerial;
  hero('Data, coverage & <em>limitations</em>',
-  'Source-coverage limitations and player-level model output, not independently certified all-time scorecards.');
+  'Understand which evidence supports the selected player discipline and where historical coverage remains incomplete.');
  const c=meta.coverage||{};
- const rows=FORMATS.map(f=>{
-  const x=c.formats?.[f]||{};
-  return '<tr><td>'+E(LABEL[f])+'</td><td>'+I(x.observedMatches)+
-   '</td><td>'+I(x.deliveryMatches)+'</td><td>'+
-   I(x.historicalScorecardMatches)+'</td></tr>';
- });
- $('#page-body').innerHTML=panel('Observed international match coverage',
-    table(['Format','Observed matches','Modern delivery matches','Historic batting-only matches'],rows))+
- '<div class="callout">Historical batting and bowling source records are not available for download. '+ 
- 'Official match-level completeness and all-time greatness rankings remain unverified.</div>'+
- panel('Reference career checks','<div class="panel">Validated career run totals: '+
- I(c.passingCareers)+' / '+I(c.checkedCareers)+
- '. Matching career totals does not certify all innings or player identities.</div>');
+ if(selected==='batting'){
+  const rows=FORMATS.map(f=>{
+   const x=c.formats?.[f]||{};
+   return '<tr><td>'+E(LABEL[f])+'</td><td>'+I(x.observedMatches)+
+    '</td><td>'+I(x.deliveryMatches)+'</td><td>'+
+    I(x.historicalScorecardMatches)+'</td></tr>';
+  });
+  $('#page-body').innerHTML=panel('Observed batting match coverage',
+     table(['Format','Observed matches','Modern delivery matches','Historic batting-only matches'],rows))+
+  '<div class="callout">Historical batting source records are private. Official match-level completeness and all-time identity reconciliation remain unverified.</div>'+
+  panel('Reference career checks','<div class="panel">Validated career run totals: '+
+  I(c.passingCareers)+' / '+I(c.checkedCareers)+
+  '. Passing career-total checks does not certify every innings or historical player identity.</div>');
+  return;
+ }
+ $('#page-body').innerHTML='<div class="panel">Loading '+E(selected)+' coverage…</div>';
+ try{
+  const d=await get('disciplines');
+  if(serial!==requestSerial||state.view!=='coverage'||state.discipline!==selected)return;
+  const rows=FORMATS.map(f=>{
+   const x=d.formats?.[selected]?.[f]||{};
+   return '<tr><td>'+E(LABEL[f])+'</td><td>'+I(x.qualifiedPlayers)+'</td>'+
+    '<td>'+E(x.coverage||'Modern-only Cricsheet')+'</td></tr>';
+  });
+  $('#page-body').innerHTML=panel('Source-approved '+E(selected)+' player coverage',
+    table(['Format','Qualified players','Data scope'],rows))+
+   '<div class="callout">Only modern Cricsheet-derived player summaries are published for this discipline. Historical bowling archives, unverified player crosswalks and independent official match census remain private or unverified. Combined formats require qualification in every component format.</div>';
+ }catch(e){if(serial===requestSerial)showError($('#page-body'),e)}
 }
 function methodology(){
- hero('How the <em>index works</em>',
-  'A plain-language explanation of derived measurements; raw data, code and model fitting remain private.');
- const items=[
- ['Era adjusted quality','Compare player performance with peers in the same era and format.'],
- ['Opposition','Adjust using opponent strength proxies where available.'],
- ['Team carry','Estimate contribution relative to the observed teammates.'],
- ['Home and away','Account for known host conditions, leaving uncertain venues unknown.'],
- ['Peak and longevity','Show career, best seasons, short-term peak and JAWS-style indices.']];
- $('#page-body').innerHTML=panel('Model overview','<div class="trio">'+items.map(([a,b])=>
- '<article class="panel"><h3>'+E(a)+'</h3><p>'+E(b)+'</p></article>').join('')+
- '</div><p class="note">Scores are experimental research outputs, not official all-time certifications.</p>');
+ const type=state.discipline, title={batting:'Batting',bowling:'Bowling',allrounder:'All-Rounder'}[type];
+ hero(E(title)+' <em>index methodology</em>',
+  'An explanation of the selected discipline’s derived research metrics, limitations and comparisons.');
+ let items;
+ if(type==='batting')items=[
+  ['Era-adjusted quality','Compare batting performance with peers in the same era and format.'],
+  ['Opposition strength','Use opponent quality proxies where evidence is available.'],
+  ['Team carry','Evaluate contribution relative to observed teammates.'],
+  ['Home and away','Use known venue context while leaving uncertain venues unknown.'],
+  ['Peak and longevity','Combine career performance, strongest seasons, and JAWS-style measures.']];
+ else if(type==='bowling')items=[
+  ['Bowling effectiveness','Measure wickets per legal delivery and runs conceded against similar-era peers.'],
+  ['Opponent-conditioned peers','Where enough observations exist, compare bowlers against peers facing the same opposition. This is not an independently validated opponent batting-strength score.'],
+  ['Era and evidence','Use source-tier-matched, leave-player-out ±3-year references and evidence-based shrinkage.'],
+  ['Career and peak','Include career totals and seven strongest seasons to separate longevity from peak.'],
+  ['Provisional scope','Public outputs use approved modern Cricsheet summaries; cross-era historical bowling certification is incomplete.']];
+ else items=[
+  ['Independent components','Rank the player’s batting and bowling performances separately within the same format.'],
+  ['Balanced contribution','Combine each discipline percentile using a harmonic mean, penalizing players weak in either skill.'],
+  ['Verified identities','Join batting and bowling using the same immutable Cricsheet provider ID and compatible team.'],
+  ['Qualification','Players must meet the individual batting and bowling model eligibility thresholds.'],
+  ['Combined formats','Test+ODI and All Three Formats average independently normalized metric percentiles among players qualified in every selected format.']];
+ $('#page-body').innerHTML=panel('How the '+E(title.toLowerCase())+' ranking works',
+   '<div class="trio">'+items.map(([a,b])=>'<article class="panel"><h3>'+E(a)+'</h3>'+
+   '<p>'+E(b)+'</p></article>').join('')+'</div>'+
+   '<p class="note">These are provisional analytical outputs; official all-time match coverage is not certified.</p>');
 }
+
 async function render(){
- const route=currentRoute();
+ let route=currentRoute();
+ if(route==='bowling'||route==='allrounder'){
+   state.discipline=route;
+   location.hash='#test';
+   return;
+ }
  state.view=route;navigation(route);
  if(!meta){try{meta=await get('bootstrap')}catch(e){showError($('#page-body'),e);return}}
- if(route==='overview')overview();
+ if(route==='overview')await overview();
  else if(ALL.includes(route)){state.format=route;await ranking(route)}
- else if(route==='bowling'||route==='allrounder')await disciplineRanking(route)
  else if(route==='compare')await compare();
  else if(route==='matches')await matches();
  else if(route==='methodology')methodology();
- else if(route==='coverage')coverage();
- $('#sidebar-status').textContent='Private-backed research results';
+ else if(route==='coverage')await coverage();
+ $('#sidebar-status').textContent='Private-backed '+state.discipline+' research';
 }
 function delayed(callback){clearTimeout(searchTimer);searchTimer=setTimeout(callback,280)}
 document.addEventListener('input',ev=>{
  if(ev.target.id==='output-search'){state.search=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
  if(ev.target.id==='output-country'){state.country=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
- if(ev.target.id==='compare-search'){state.compareSearch=ev.target.value;delayed(searchComparison)}
+ if(ev.target.id==='discipline-search'){state.disciplineSearch=ev.target.value;state.disciplinePage=0;delayed(()=>disciplineRanking(state.format))}
+ if(ev.target.id==='discipline-country'){state.disciplineCountry=ev.target.value;state.disciplinePage=0;delayed(()=>disciplineRanking(state.format))}
  if(ev.target.id==='match-search'){state.matchSearch=ev.target.value;state.matchPage=0;delayed(fetchMatches)}
  if(ev.target.id==='match-opposition'){state.matchOpposition=ev.target.value;state.matchPage=0;delayed(fetchMatches)}
+ for(const side of ['first','second'])if(ev.target.id==='compare-search-'+side){
+   state[side+'Search']=ev.target.value;
+   const serial=++requestSerial;
+   delayed(()=>searchComparison(side,serial));
+ }
 });
 document.addEventListener('change',ev=>{
+ if(ev.target.id==='global-discipline'){
+   if(!['batting','bowling','allrounder'].includes(ev.target.value))return;
+   state.discipline=ev.target.value;
+   state.page=0;state.disciplinePage=0;state.disciplineMetric='greatness';
+   state.first=null;state.second=null;state.firstSearch='';state.secondSearch='';
+   render();
+ }
  if(ev.target.id==='output-metric'){state.metric=ev.target.value;state.page=0;ranking(state.format)}
- if(ev.target.id==='compare-format'){state.compareFormat=ev.target.value;state.first=null;state.second=null;state.compareSearch='';compare()}
+ if(ev.target.id==='discipline-metric'){state.disciplineMetric=ev.target.value;state.disciplinePage=0;ranking(state.format)}
+ if(ev.target.id==='compare-format'){state.compareFormat=ev.target.value;state.first=null;state.second=null;compare()}
+ for(const side of ['first','second'])if(ev.target.id==='compare-player-'+side){
+   state[side]=ev.target.value;showComparisonPlayer(side);
+ }
  if(ev.target.id==='match-format'){state.matchFormat=ev.target.value;state.matchPage=0;matches()}
 });
 document.addEventListener('click',ev=>{
+ const dp=ev.target.closest('[data-discipline-player]');
+ if(dp){disciplineProfile(state.discipline,state.format,dp.dataset.disciplinePlayer);return}
  const p=ev.target.closest('[data-player]');if(p){showProfile(state.format,p.dataset.player);return}
  const rp=ev.target.closest('[data-rankpage]');if(rp){state.page=Math.max(0,Math.min(49,state.page+Number(rp.dataset.rankpage)));ranking(state.format);return}
+ const drp=ev.target.closest('[data-discipline-page]');if(drp){state.disciplinePage=Math.max(0,Math.min(49,state.disciplinePage+Number(drp.dataset.disciplinePage)));ranking(state.format);return}
  const mp=ev.target.closest('[data-matchpage]');if(mp){state.matchPage=Math.max(0,Math.min(99,state.matchPage+Number(mp.dataset.matchpage)));fetchMatches();return}
  const detail=ev.target.closest('[data-match-innings]');if(detail){matchDetail(detail.dataset.matchInnings,detail.dataset.matchPlayer);return}
- const side=ev.target.closest('[id^=compare-side-]');if(side){state.activeCompareSide=side.id.slice('compare-side-'.length);return}
- const chosen=ev.target.closest('[data-compare-id]');if(chosen){
-  const side=state.activeCompareSide;
-  state[side]=chosen.dataset.compareId;
-  showProfile(state.compareFormat,chosen.dataset.compareId,'#compare-'+side+'-result');
- }
 });
+
 $('#menu-button').addEventListener('click',()=>{const on=$('#sidebar').classList.toggle('open');$('#menu-button').setAttribute('aria-expanded',String(on))});
-window.addEventListener('hashchange',()=>{state.page=0;state.disciplinePage=0;state.disciplineMetric='greatness';render()});
+window.addEventListener('hashchange',()=>{state.page=0;state.disciplinePage=0;render()});
 render();
 })();
