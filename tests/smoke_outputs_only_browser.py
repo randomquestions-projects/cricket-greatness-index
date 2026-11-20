@@ -82,8 +82,26 @@ def run():
                 for name in ("test","odi","t20i","test_odi","all_three"):
                     page.goto(origin+"/#"+name)
                     page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
+                    assert page.locator("#output-metric").input_value()=="careerGreatness"
+                    assert page.locator("#full-member-filter").input_value()=="all"
+                    assert page.locator("#innings-min").input_value()=="0"
+                    assert int(page.locator("#innings-max").input_value())>0
                     assert not page.locator("#output-results").get_by_text("Results service unavailable").count()
                     checked.append(name)
+                # Filter Test batting through the exact (server-side) subset.
+                page.goto(origin+"/#odi")
+                page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
+                unfiltered_max=page.locator("#innings-max").input_value()
+                page.locator("#full-member-filter").select_option("yes")
+                page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
+                assert page.locator("#full-member-filter").input_value()=="yes"
+                assert page.locator("#innings-max").input_value()==unfiltered_max
+                page.locator("#innings-min").fill("1")
+                page.locator("#innings-min").press("Tab")
+                page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
+                assert page.locator("#innings-min").input_value()=="1"
+                page.locator("#full-member-filter").select_option("all")
+                checked.append("batting-icc-full-member-innings-filter")
                 # One selector controls existing pages; no separate discipline menu.
                 assert page.locator("#global-discipline").count()==1
                 assert page.locator("aside [data-view='bowling']").count()==0
@@ -92,6 +110,17 @@ def run():
                     for fmt in ("test","odi","t20i"):
                         page.goto(origin+"/#"+fmt)
                         page.locator("#discipline-results tbody tr").first.wait_for(timeout=25000)
+                        assert page.locator("#discipline-metric").input_value()=="career"
+                        assert page.locator("#full-member-filter").count()==1
+                        assert page.locator("#innings-low").count()==1
+                        assert page.locator("#innings-high").count()==1
+                        if fmt=="odi":
+                            page.locator("#full-member-filter").select_option("yes")
+                            page.locator("#discipline-results tbody tr").first.wait_for(timeout=25000)
+                            assert page.locator("#full-member-filter").input_value()=="yes"
+                            page.locator("#full-member-filter").select_option("all")
+                            page.locator("#discipline-results tbody tr").first.wait_for(timeout=25000)
+                            checked.append(discipline+"-icc-filter")
                         page.locator("[data-discipline-player]").first.click()
                         page.locator("#discipline-profile h3").wait_for(timeout=20000)
                         checked.append(discipline+"-"+fmt)

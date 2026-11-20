@@ -8,15 +8,15 @@ const LABEL={overview:'Overview',test:'Test Cricket',odi:'One-Day Internationals
  bowling:'Bowling Rankings',allrounder:'All-Rounder Rankings',
  compare:'Player Comparison',matches:'Match Explorer',
  methodology:'Index Methodology',coverage:'Data & Coverage'};
-const METRICS={jawsPercentile:'JAWS-inspired percentile',quality:'Era-adjusted quality',
- teamCarry:'Team carry',careerGreatness:'Career greatness',peakQuality:'Peak quality'};
+const METRICS={careerGreatness:'Career greatness',jawsPercentile:'JAWS-inspired percentile',
+ quality:'Era-adjusted quality',teamCarry:'Team carry',peakQuality:'Peak quality'};
 const E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const N=(v,d=1)=>v==null||!Number.isFinite(+v)?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
 const I=v=>N(v,0);
-const state={discipline:'batting',view:'overview',format:'test',metric:'jawsPercentile',search:'',country:'',
+const state={discipline:'batting',view:'overview',format:'test',metric:'careerGreatness',search:'',country:'',
  page:0,matchFormat:'odi',matchPage:0,matchSearch:'',matchOpposition:'',
  first:null,second:null,firstSearch:'',secondSearch:'',compareFormat:'test',
- disciplineFormat:'test',disciplineMetric:'greatness',disciplineSearch:'',disciplineCountry:'',disciplinePage:0};
+ disciplineFormat:'test',disciplineMetric:'career',disciplineSearch:'',disciplineCountry:'',disciplinePage:0,fullMember:'all',inningsMin:'',inningsMax:'',inningsBound:null,inningsContext:''};
 let meta=null,requestSerial=0,searchTimer;
 function apiURL(path,params={}){
  const base=String(window.CRICKET_OUTPUTS_API_BASE||'');
@@ -59,6 +59,77 @@ function table(head,rows){
  return '<div class="table-scroller"><table><thead><tr>'+head.map(s=>'<th>'+E(s)+'</th>').join('')+
  '</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
+
+/* ICC membership is based on present-day Full Member teams, not historic
+   membership when a particular innings was played. All filters execute on
+   bounded server-side ranking queries and are applied before pagination. */
+function ensureRankingRange(fmt){
+ const context=state.discipline+':'+fmt;
+ if(state.inningsContext!==context){
+  state.inningsContext=context;
+  state.inningsMin='';state.inningsMax='';state.inningsBound=null;
+ }
+}
+function rankingFiltersParams(){
+ return {fullMember:state.fullMember,minInnings:state.inningsMin,maxInnings:state.inningsMax};
+}
+function sharedRankingFilters(){
+ return '<label>ICC Full Members<select id="full-member-filter" aria-label="ICC Full Members">'+
+ ['all','yes','no'].map(x=>'<option value="'+x+'"'+(state.fullMember===x?' selected':'')+'>'+
+  ({all:'All teams',yes:'Yes — Full Members',no:'No — Other teams'}[x])+'</option>').join('')+
+ '</select></label><div class="innings-filter" id="innings-range-host" aria-label="Number of innings range">'+
+ (state.inningsBound==null?'<span class="range-placeholder">Loading innings range…</span>':inningsRangeHTML())+
+ '</div>';
+}
+function inningsRangeHTML(){
+ const cap=Math.max(0,Number(state.inningsBound)||0);
+ const low=Math.min(cap,Math.max(0,state.inningsMin===''?0:Number(state.inningsMin)));
+ const high=Math.max(low,Math.min(cap,state.inningsMax===''?cap:Number(state.inningsMax)));
+ const lowPct=cap?Math.round(low*100/cap):0;
+ const highPct=cap?Math.round(high*100/cap):100;
+ return '<fieldset class="innings-fieldset"><legend>Number of innings</legend>'+
+ '<div class="innings-number-row"><label>Minimum<input id="innings-min" inputmode="numeric" type="number" min="0" max="'+cap+
+ '" step="1" value="'+low+'" aria-label="Minimum innings"></label>'+
+ '<span aria-hidden="true">–</span>'+
+ '<label>Maximum<input id="innings-max" inputmode="numeric" type="number" min="0" max="'+cap+
+ '" step="1" value="'+high+'" aria-label="Maximum innings"></label></div>'+
+ '<div class="innings-dual" style="--range-low:'+lowPct+'%;--range-high:'+highPct+'%">'+
+ '<input type="range" id="innings-low" min="0" max="'+cap+'" value="'+low+
+ '" step="1" aria-label="Minimum innings slider"'+(cap===0?' disabled':'')+'>'+
+ '<input type="range" id="innings-high" min="0" max="'+cap+'" value="'+high+
+ '" step="1" aria-label="Maximum innings slider"'+(cap===0?' disabled':'')+'>'+
+ '</div><div class="innings-range-hint">Inclusive · '+I(low)+'–'+I(high)+' innings'+
+ (state.discipline==='allrounder'?' (batting innings)':'')+'</div></fieldset>';
+}
+function paintInningsFilter(bounds){
+ if(!bounds||typeof bounds.max!=='number')throw new Error('Rankings API lacks innings-range support');
+ const cap=Math.max(0,Math.min(10000,Math.floor(bounds.max)));
+ state.inningsBound=cap;
+ const node=$('#innings-range-host');
+ if(node)node.innerHTML=inningsRangeHTML();
+}
+function changeInningsSelection(changed){
+ if(state.inningsBound==null)return;
+ const cap=state.inningsBound;
+ const lower=$('#innings-min'),upper=$('#innings-max'),lowSlider=$('#innings-low'),highSlider=$('#innings-high');
+ if(!lower||!upper||!lowSlider||!highSlider)return;
+ let lo=Number((changed==='innings-low'?lowSlider:lower).value);
+ let hi=Number((changed==='innings-high'?highSlider:upper).value);
+ if(!Number.isFinite(lo)||!Number.isFinite(hi))return;
+ lo=Math.round(Math.max(0,Math.min(cap,lo)));
+ hi=Math.round(Math.max(0,Math.min(cap,hi)));
+ if(lo>hi){if(changed==='innings-low'||changed==='innings-min')hi=lo;else lo=hi}
+ state.inningsMin=lo===0?'':String(lo);
+ state.inningsMax=hi===cap?'':String(hi);
+ for(const [el,value] of [[lower,lo],[lowSlider,lo],[upper,hi],[highSlider,hi]])el.value=value;
+ const wrap=$('.innings-dual');
+ if(wrap){wrap.style.setProperty('--range-low',(cap?lo*100/cap:0)+'%');
+          wrap.style.setProperty('--range-high',(cap?hi*100/cap:100)+'%')}
+ const hint=$('.innings-range-hint');
+ if(hint)hint.textContent='Inclusive · '+I(lo)+'–'+I(hi)+' innings'+
+       (state.discipline==='allrounder'?' (batting innings)':'');
+}
+
 async function overview(){
  const current=state.discipline,serial=++requestSerial;
  const name={batting:'Batting',bowling:'Bowling',allrounder:'All-Rounder'}[current];
@@ -89,8 +160,8 @@ async function overview(){
    const p=(leaders[f]||[])[0];
    return '<a class="leader" href="#'+f+'"><small>'+E(LABEL[f])+'</small><h3>'+
    E(p?.name||'Unavailable')+'</h3><p>'+(current==='batting'?
-   'JAWS percentile '+N(p?.jawsPercentile):
-   'Provisional score '+N(p?.greatness))+' · '+I(p?.innings)+' innings</p>'+
+   'Career greatness '+N(p?.careerGreatness):
+   'Career greatness '+N(p?.career))+' · '+I(p?.innings)+' innings</p>'+
    '<span>Open '+E(name.toLowerCase())+' ranking →</span></a>';
   }).join('');
   const tiles=ALL.map(f=>'<a class="view-card" href="#'+f+'"><small>'+E(name.toUpperCase())+' ANALYSIS</small>'+
@@ -107,14 +178,15 @@ async function overview(){
 }
 const D_METRICS={
  bowling:{greatness:'Greatness index',quality:'Era & opponent peer quality',
-          career:'Career value',peak:'Peak quality',wickets:'Wickets'},
- allrounder:{greatness:'All-rounder index',batting:'Batting percentile',
+          career:'Career greatness',peak:'Peak quality',wickets:'Wickets'},
+ allrounder:{career:'Career greatness',greatness:'All-rounder JAWS index',batting:'Batting percentile',
              bowling:'Bowling percentile',runs:'Runs',wickets:'Wickets'}
 };
 async function disciplineRanking(fmt){
  const discipline=state.discipline;
  if(!D_METRICS[discipline])return;
- if(!D_METRICS[discipline][state.disciplineMetric])state.disciplineMetric='greatness';
+ if(!D_METRICS[discipline][state.disciplineMetric])state.disciplineMetric='career';
+ ensureRankingRange(fmt);
  const serial=++requestSerial,metric=state.disciplineMetric;
  const active=document.activeElement?.id||'';
  const caret=(active==='discipline-search'||active==='discipline-country')?
@@ -130,26 +202,27 @@ async function disciplineRanking(fmt){
    '</div><section class="section"><div class="controls">'+
    '<label>Rank by<select id="discipline-metric">'+metricOptions+'</select></label>'+
    '<label>Search player<input id="discipline-search" placeholder="Name or country" value="'+E(state.disciplineSearch)+'"></label>'+
-   '<label>Country<input id="discipline-country" placeholder="Filter country" value="'+E(state.disciplineCountry)+'"></label>'+
+   '<label>Country<input id="discipline-country" placeholder="Filter country" value="'+E(state.disciplineCountry)+'"></label>'+sharedRankingFilters()+
    '</div><div id="discipline-results" class="panel">Loading ranking results…</div></section>'+
    '<section class="section"><div id="discipline-profile"></div></section>';
  if(caret!==null){const el=$('#'+active);if(el){el.focus();el.setSelectionRange(caret,caret)}}
  try{
   const result=await get('discipline-rankings',{discipline,format:fmt,metric,
       search:state.disciplineSearch,country:state.disciplineCountry,
-      page:state.disciplinePage});
+      page:state.disciplinePage,...rankingFiltersParams()});
   if(serial!==requestSerial||state.view!==fmt||state.discipline!==discipline)return;
   if(result.schemaVersion!=='cricket-discipline-projection-v1')
       throw new Error('Unexpected research schema');
+   paintInningsFilter(result.inningsBounds);
   const head=discipline==='bowling'?
     ['Rank','Bowler / country',D_METRICS[discipline][metric],
      'Innings','Wickets','Quality','Career','Peak']:
     ['Rank','All-rounder / country',D_METRICS[discipline][metric],
-     'Batting innings','Runs','Wickets','Batting %ile','Bowling %ile'];
+     'Batting innings','Runs','Wickets','Career','Batting %ile','Bowling %ile'];
   const rows=(result.items||[]).map((p,i)=>{
    const cols=discipline==='bowling'?
       [I(p.innings),I(p.wickets),N(p.quality),N(p.career),N(p.peak)]:
-      [I(p.innings),I(p.runs),I(p.wickets),N(p.batting),N(p.bowling)];
+      [I(p.innings),I(p.runs),I(p.wickets),N(p.career),N(p.batting),N(p.bowling)];
    return '<tr><td>'+I(result.page*result.pageSize+i+1)+'</td><td>'+
      '<button class="text-link" data-discipline-player="'+E(p.playerId)+'">'+E(p.name)+
      '</button><span class="team">'+E(p.team)+'</span></td><td class="figure">'+
@@ -170,10 +243,10 @@ async function disciplineRanking(fmt){
 function disciplineCard(p,fmt,discipline){
  if(!p)return '<div class="panel">Player not available in this discipline and format.</div>';
  const columns=discipline==='bowling'?
-   [['Greatness',p.greatness],['Quality',p.quality],['Career',p.career],
+   [['Career greatness',p.career],['JAWS-inspired greatness',p.greatness],['Quality',p.quality],
     ['Peak',p.peak],['Wickets',p.wickets],['Innings',p.innings],
     ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate]]:
-   [['All-rounder index',p.greatness],['Batting percentile',p.batting],
+   [['Career greatness',p.career],['All-rounder JAWS',p.greatness],['Batting percentile',p.batting],
     ['Bowling percentile',p.bowling],['Runs',p.runs],['Wickets',p.wickets],
     ['Batting innings',p.battingInnings??p.innings],['Bowling innings',p.bowlingInnings]];
  return '<article class="player-card"><small>'+E(p.team)+' · '+E(LABEL[fmt])+
@@ -196,6 +269,7 @@ async function disciplineProfile(discipline,fmt,id,selector='#discipline-profile
 
 async function ranking(fmt){
  if(state.discipline!=='batting')return disciplineRanking(fmt);
+ ensureRankingRange(fmt);
  hero(E(LABEL[fmt])+' <em>Batting Greatness</em>',
  'Search, filter and rank model-derived player summaries; raw batting and bowling records remain in private storage.');
  const serial=++requestSerial;
@@ -208,7 +282,7 @@ async function ranking(fmt){
  $('#page-body').innerHTML='<section class="section"><div class="controls">'+
  '<label>Rank by<select id="output-metric">'+options+'</select></label>'+
  '<label>Search batter<input id="output-search" placeholder="Name or country" value="'+E(state.search)+'"></label>'+
- '<label>Country<input id="output-country" placeholder="Filter country" value="'+E(state.country)+'"></label>'+
+ '<label>Country<input id="output-country" placeholder="Filter country" value="'+E(state.country)+'"></label>'+sharedRankingFilters()+
  '</div><div id="output-results" class="panel">Loading ranking results…</div></section>'+
  '<section class="section"><div id="output-profile"></div></section>';
  if(caret!==null){
@@ -217,8 +291,9 @@ async function ranking(fmt){
  }
  try{
   const result=await get('rankings',{format:fmt,metric:m,search:state.search,
-        country:state.country,page:state.page});
+        country:state.country,page:state.page,...rankingFiltersParams()});
   if(serial!==requestSerial||state.view!==fmt)return;
+  paintInningsFilter(result.inningsBounds);
   const trs=result.items.map((p,i)=>'<tr><td>'+I(result.page*40+i+1)+'</td>'+
   '<td><button class="text-link" data-player="'+E(p.playerId)+'"><b>'+E(p.name)+
   '</b></button><span class="team">'+E(p.team)+'</span></td>'+
@@ -245,6 +320,7 @@ function profileCard(p,fmt){
  return '<article class="player-card"><small>'+E(p.team)+' · '+I(p.innings??p.totalInnings)+
  ' observed innings</small><h3>'+E(p.name)+'</h3>'+
  '<div class="inline-metrics">'+[
+ ['Career greatness',p.careerGreatness??p.overallCareerPercentile],
  ['Quality',p.quality??p.overallQualityPercentile],
  ['Team carry',p.teamCarry??p.overallCarryPercentile],
  ['JAWS percentile',p.jawsPercentile??p.overallJawsPercentile]
@@ -497,6 +573,10 @@ async function render(){
 }
 function delayed(callback){clearTimeout(searchTimer);searchTimer=setTimeout(callback,280)}
 document.addEventListener('input',ev=>{
+ if(['innings-low','innings-high','innings-min','innings-max'].includes(ev.target.id)){
+   if(ev.target.value!=='')changeInningsSelection(ev.target.id);
+   return;
+ }
  if(ev.target.id==='output-search'){state.search=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
  if(ev.target.id==='output-country'){state.country=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
  if(ev.target.id==='discipline-search'){state.disciplineSearch=ev.target.value;state.disciplinePage=0;delayed(()=>disciplineRanking(state.format))}
@@ -510,10 +590,18 @@ document.addEventListener('input',ev=>{
  }
 });
 document.addEventListener('change',ev=>{
+
+ if(ev.target.id==='full-member-filter'){
+  state.fullMember=ev.target.value;state.page=0;state.disciplinePage=0;ranking(state.format);
+ }
+ if(['innings-low','innings-high','innings-min','innings-max'].includes(ev.target.id)){
+  changeInningsSelection(ev.target.id);
+  state.page=0;state.disciplinePage=0;ranking(state.format);
+ }
  if(ev.target.id==='global-discipline'){
    if(!['batting','bowling','allrounder'].includes(ev.target.value))return;
    state.discipline=ev.target.value;
-   state.page=0;state.disciplinePage=0;state.disciplineMetric='greatness';
+   state.page=0;state.disciplinePage=0;state.disciplineMetric='career';state.inningsContext='';
    state.first=null;state.second=null;state.firstSearch='';state.secondSearch='';
    render();
  }
