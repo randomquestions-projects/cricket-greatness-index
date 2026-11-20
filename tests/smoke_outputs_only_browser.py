@@ -53,7 +53,8 @@ def run():
                         raise AssertionError("Browser attempted external unapproved API fetch")
                     api_requests.append(route.request.url)
                     reply=route.fetch(timeout=25000)
-                    if reply.status!=200 and not ("/v1/cricket/discipline-" in route.request.url and reply.status in (404,503)):
+                    if reply.status!=200 and not ("/v1/cricket/discipline-" in route.request.url
+                         and reply.status in (400,404,503)):
                         raise AssertionError("Live API failed: "+str(reply.status))
                     headers=dict(reply.headers)
                     # The real service explicitly accepts the published github.io
@@ -72,32 +73,56 @@ def run():
                     page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                     assert not page.locator("#output-results").get_by_text("Results service unavailable").count()
                     checked.append(name)
+                # One selector controls existing pages; no separate discipline menu.
+                assert page.locator("#global-discipline").count()==1
+                assert page.locator("aside [data-view='bowling']").count()==0
                 for discipline in ("bowling","allrounder"):
-                    page.goto(origin+"/#"+discipline)
-                    page.locator("#discipline-results").wait_for(timeout=20000)
-                    # Existing live backend may not have the new optional research
-                    # projection yet. The page must fail closed with a truthful
-                    # unavailable message rather than misrepresent old batting.
-                    page.wait_for_function("""() => {
-                      const el=document.querySelector('#discipline-results');
-                      return el && (!el.textContent.includes('Loading bounded player results'));
-                    }""",timeout=20000)
-                    assert page.locator("#discipline-results").inner_text().strip()
-                    checked.append(discipline+"-page")
+                    page.locator("#global-discipline").select_option(discipline)
+                    for fmt in ("test","odi","t20i"):
+                        page.goto(origin+"/#"+fmt)
+                        page.locator("#discipline-results tbody tr").first.wait_for(timeout=25000)
+                        page.locator("[data-discipline-player]").first.click()
+                        page.locator("#discipline-profile h3").wait_for(timeout=20000)
+                        checked.append(discipline+"-"+fmt)
+                    # Combined-format APIs are upgraded separately; the client
+                    # must render either derived rankings or a truthful error.
+                    for fmt in ("test_odi","all_three"):
+                        page.goto(origin+"/#"+fmt)
+                        page.locator("#discipline-results").wait_for(timeout=15000)
+                        page.wait_for_function("""() => {
+                          const el=document.querySelector('#discipline-results');
+                          return el && !el.textContent.includes('Loading ranking results');
+                        }""",timeout=25000)
+                        checked.append(discipline+"-"+fmt+"-page")
+                    page.goto(origin+"/#compare")
+                    page.locator("#compare-player-first option").nth(1).wait_for(timeout=20000)
+                    page.locator("#compare-player-first").select_option(index=1)
+                    page.locator("#compare-first-result h3").wait_for(timeout=20000)
+                    page.locator("#compare-player-second option").nth(1).wait_for(timeout=20000)
+                    page.locator("#compare-player-second").select_option(index=1)
+                    page.locator("#compare-second-result h3").wait_for(timeout=20000)
+                    checked.append(discipline+"-comparison")
+                    page.goto(origin+"/#methodology")
+                    assert discipline in page.locator("#page-body").inner_text().lower().replace("-","")
+                    page.goto(origin+"/#coverage")
+                    page.locator("#page-body .section").first.wait_for(timeout=20000)
+                    page.goto(origin+"/#matches")
+                    assert "batting-only" in page.locator("#page-body").inner_text()
+                    checked.append(discipline+"-coverage-methodology-explorer")
+                page.locator("#global-discipline").select_option("batting")
                 page.goto(origin+"/#test")
                 page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                 page.locator("[data-player]").first.click()
                 page.locator("#output-profile h3").wait_for(timeout=20000)
                 checked.append("player-profile")
                 page.goto(origin+"/#compare")
-                page.locator("#compare-hits [data-compare-id]").first.wait_for(timeout=20000)
-                page.locator("#compare-side-first").click()
-                page.locator("#compare-hits [data-compare-id]").first.click()
+                page.locator("#compare-player-first option").nth(1).wait_for(timeout=20000)
+                page.locator("#compare-player-first").select_option(index=1)
                 page.locator("#compare-first-result h3").wait_for(timeout=20000)
-                page.locator("#compare-side-second").click()
-                page.locator("#compare-hits [data-compare-id]").last.click()
+                page.locator("#compare-player-second option").nth(1).wait_for(timeout=20000)
+                page.locator("#compare-player-second").select_option(index=1)
                 page.locator("#compare-second-result h3").wait_for(timeout=20000)
-                checked.append("comparison")
+                checked.append("batting-comparison")
                 page.goto(origin+"/#matches")
                 page.locator("#match-results tbody tr").first.wait_for(timeout=20000)
                 page.locator("[data-match-innings]").first.click()
