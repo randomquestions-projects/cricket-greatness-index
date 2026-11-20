@@ -15,6 +15,9 @@ on:
       - 'LICENSE-NOTICE.md'
 permissions:
   contents: read
+concurrency:
+  group: cricket-ui-smoke-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   static-privacy-contract:
     runs-on: ubuntu-latest
