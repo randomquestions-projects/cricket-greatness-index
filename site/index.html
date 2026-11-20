@@ -10,12 +10,6 @@
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
     <a class="brand" href="#overview" aria-label="Cricket Greatness Lab home"><span class="brand-mark">CG<span>·</span></span><span class="brand-text"><strong>Cricket<br>Greatness Lab</strong><small>INDEPENDENT CRICKET ANALYTICS</small></span></a>
-    <div class="nav-title">DISCIPLINES</div>
-    <nav aria-label="Discipline navigation">
-      <a href="#test" data-view="test"><span class="nav-symbol">◈</span> Batting Rankings</a>
-      <a href="#bowling" data-view="bowling"><span class="nav-symbol">◎</span> Bowling Rankings</a>
-      <a href="#allrounder" data-view="allrounder"><span class="nav-symbol">◇</span> All-Rounder Rankings</a>
-    </nav>
     <div class="nav-title">FORMATS &amp; ANALYSIS</div>
     <nav id="navigation" aria-label="Main navigation">
       <a href="#overview" data-view="overview"><span class="nav-symbol">◈</span> Overview</a>
@@ -24,7 +18,7 @@
       <a href="#t20i" data-view="t20i"><span class="nav-symbol">◕</span> T20 Internationals</a>
       <a href="#test_odi" data-view="test_odi"><span class="nav-symbol">◇</span> Tests + ODIs</a>
       <a href="#all_three" data-view="all_three"><span class="nav-symbol">◆</span> All Three Formats</a>
-      <a href="#compare" data-view="compare"><span class="nav-symbol">⇄</span> Batter Comparison</a>
+      <a href="#compare" data-view="compare"><span class="nav-symbol">⇄</span> Player Comparison</a>
       <a href="#matches" data-view="matches"><span class="nav-symbol">☷</span> Match Explorer</a>
     </nav>
     <div class="nav-title">RESEARCH</div>
@@ -35,7 +29,7 @@
     <div class="sidebar-bottom"><span class="status-dot"></span> <span id="sidebar-status">Loading verified research data…</span><a href="https://randomquestions-projects.github.io/">← All analytics projects</a></div>
   </aside>
   <div class="workspace">
-    <header class="topbar"><button type="button" id="menu-button" aria-label="Toggle navigation" aria-expanded="false">☰</button><span>CRICKET GREATNESS LAB / <b id="breadcrumb">OVERVIEW</b></span><span class="topbadge">INDEPENDENT RESEARCH · PROVISIONAL</span></header>
+    <header class="topbar"><button type="button" id="menu-button" aria-label="Toggle navigation" aria-expanded="false">☰</button><span class="topbar-path">CRICKET GREATNESS LAB / <b id="breadcrumb">OVERVIEW</b></span><div class="topbar-actions"><label for="discipline-selector">RANKING TYPE</label><select id="discipline-selector" aria-label="Select ranking discipline"><option value="batting">Batting</option><option value="bowling">Bowling</option><option value="allrounder">All-Rounders</option></select><span class="topbadge">PROVISIONAL RESEARCH</span></div></header>
     <main id="content" tabindex="-1">
       <div id="page-header" class="hero"><div class="eyebrow">THREE DISCIPLINES · TEST · ODI · T20I</div><h1>Greatness beyond the scorecard.</h1><p>Explore batting, bowling and all-rounders with independent models, source transparency and honest coverage limitations.</p></div>
       <div id="research-notice" role="status" class="research-notice">Loading scorecard-era research scores…</div>
