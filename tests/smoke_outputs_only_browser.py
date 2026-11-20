@@ -72,18 +72,39 @@ def run():
                     page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                     assert not page.locator("#output-results").get_by_text("Results service unavailable").count()
                     checked.append(name)
+                # The same format pages must switch between independent disciplines
+                # without special discipline navigation links.
+                assert page.locator('#sidebar [data-view="bowling"]').count()==0
+                assert page.locator('#sidebar [data-view="allrounder"]').count()==0
+                assert page.locator('#discipline-selector option').count()==3
                 for discipline in ("bowling","allrounder"):
-                    page.goto(origin+"/#"+discipline)
-                    page.locator("#discipline-results").wait_for(timeout=20000)
-                    # Existing live backend may not have the new optional research
-                    # projection yet. The page must fail closed with a truthful
-                    # unavailable message rather than misrepresent old batting.
-                    page.wait_for_function("""() => {
-                      const el=document.querySelector('#discipline-results');
-                      return el && (!el.textContent.includes('Loading bounded player results'));
-                    }""",timeout=20000)
-                    assert page.locator("#discipline-results").inner_text().strip()
-                    checked.append(discipline+"-page")
+                    page.locator("#discipline-selector").select_option(discipline)
+                    for fmt in ("test","odi","t20i"):
+                        page.goto(origin+"/#"+fmt)
+                        page.locator("#discipline-results tbody tr").first.wait_for(timeout=20000)
+                        page.locator("[data-discipline-player]").first.click()
+                        page.locator("#discipline-profile h3").wait_for(timeout=20000)
+                        assert "Cricsheet" in page.locator("#discipline-profile").inner_text()
+                        checked.append(discipline+"-"+fmt)
+                    page.goto(origin+"/#compare")
+                    page.locator("#compare-hits [data-compare-id]").first.wait_for(timeout=20000)
+                    assert page.locator("#compare-discipline").input_value()==discipline
+                    page.locator("#compare-side-first").click()
+                    page.locator("#compare-hits [data-compare-id]").first.click()
+                    page.locator("#compare-first-result h3").wait_for(timeout=20000)
+                    page.locator("#compare-side-second").click()
+                    page.locator("#compare-hits [data-compare-id]").last.click()
+                    page.locator("#compare-second-result h3").wait_for(timeout=20000)
+                    checked.append(discipline+"-comparison")
+                    page.goto(origin+"/#methodology")
+                    assert discipline in page.locator("#sidebar-status").inner_text().lower() or (
+                        "All-Rounders" in page.locator("#sidebar-status").inner_text())
+                    page.goto(origin+"/#coverage")
+                    page.locator("#page-body tbody tr").first.wait_for(timeout=20000)
+                    page.goto(origin+"/#matches")
+                    assert "batting innings only" in page.locator("#page-body").inner_text()
+                    checked.append(discipline+"-research-scope")
+                page.locator("#discipline-selector").select_option("batting")
                 page.goto(origin+"/#test")
                 page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                 page.locator("[data-player]").first.click()
