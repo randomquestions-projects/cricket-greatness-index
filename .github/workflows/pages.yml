@@ -32,7 +32,7 @@ jobs:
           API_BASE: ${{ vars.CRICKET_OUTPUTS_API_BASE }}
         run: |
           python - <<'PY'
-          import json,os,re,urllib.request
+          import json,os,re,time,urllib.error,urllib.request
           from urllib.parse import urlparse
           from pathlib import Path
           base=os.environ.get("API_BASE","").rstrip("/")
@@ -40,14 +40,24 @@ jobs:
           assert uri.scheme=="https" and re.fullmatch(
               r"[a-z0-9-]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com",uri.hostname or ""
           ) and uri.path in ("","/") and not uri.query and not uri.fragment, "Approved HTTPS API Gateway required"
+          last_request=[0.0]
           def read(path):
-              req=urllib.request.Request(base+path,headers={"Accept":"application/json"})
-              with urllib.request.urlopen(req,timeout=18) as response:
-                  assert response.status==200
-                  assert response.headers.get_content_type()=="application/json"
-                  body=response.read(450000)
-                  assert len(body)<450000
-              return json.loads(body)
+              gap=.5-(time.monotonic()-last_request[0])
+              if gap>0:time.sleep(gap)
+              for attempt in range(3):
+                  req=urllib.request.Request(base+path,headers={"Accept":"application/json"})
+                  try:
+                      with urllib.request.urlopen(req,timeout=18) as response:
+                          assert response.status==200
+                          assert response.headers.get_content_type()=="application/json"
+                          body=response.read(450000)
+                          assert len(body)<450000
+                      last_request[0]=time.monotonic()
+                      return json.loads(body)
+                  except urllib.error.HTTPError as exc:
+                      if exc.code!=429 or attempt==2:raise
+                      time.sleep((attempt+1)*1.5)
+              raise RuntimeError("Bounded API request unavailable")
           health=read("/v1/cricket/health")
           assert health.get("status")=="ok"
           bootstrap=read("/v1/cricket/bootstrap")
@@ -57,6 +67,22 @@ jobs:
           assert ranked.get("items") and len(ranked["items"])<=40
           modern=read("/v1/cricket/matches?format=odi&page=0")
           assert isinstance(modern.get("items"),list) and modern.get("schemaVersion")=="cricket-explorer-v1"
+          disciplines=read("/v1/cricket/disciplines")
+          assert disciplines.get("schemaVersion")=="cricket-discipline-projection-v1"
+          assert set(disciplines.get("disciplines",[]))=={"bowling","allrounder"}
+          assert disciplines.get("historicalRestrictedSourcesIncluded") is False
+          for discipline in ("bowling","allrounder"):
+              for fmt in ("test","odi","t20i","test_odi","all_three"):
+                  result=read("/v1/cricket/discipline-rankings?discipline="+discipline+"&format="+fmt+"&page=0")
+                  assert result.get("schemaVersion")=="cricket-discipline-projection-v1"
+                  assert result.get("format")==fmt and result.get("discipline")==discipline
+                  assert 0<len(result.get("items",[]))<=40 and result.get("allTimeCertified") is False
+              for fmt in ("test","odi","t20i"):
+                  result=read("/v1/cricket/discipline-matches?discipline="+discipline+"&format="+fmt+"&page=0")
+                  assert result.get("schemaVersion")=="cricket-discipline-matches-v1"
+                  assert 0<len(result.get("items",[]))<=40
+                  assert result.get("modernCricsheetOnly") is True
+          print("Verified 3 disciplines × 5 rankings, bounded modern match summaries and existing batting before deployment.")
           config=Path("site/assets/config.js")
           assert 'window.CRICKET_OUTPUTS_API_BASE = "";' in config.read_text()
           config.write_text("/* Public API origin; no credentials or S3 paths. */\nwindow.CRICKET_OUTPUTS_API_BASE = "+json.dumps(base)+";\n")

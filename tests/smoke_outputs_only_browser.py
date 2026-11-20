@@ -15,6 +15,7 @@ import re
 import shutil
 import tempfile
 import threading
+import time
 from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
@@ -48,13 +49,24 @@ def run():
                 context=browser.new_context(viewport={"width":1280,"height":800})
                 errors=[]
                 api_requests=[]
+                request_lock=threading.Lock()
+                last_request=[0.0]
                 def forward(route):
                     if not route.request.url.startswith(api+"/v1/cricket/"):
                         raise AssertionError("Browser attempted external unapproved API fetch")
+                    with request_lock:
+                        gap=0.5-(time.monotonic()-last_request[0])
+                        if gap>0:time.sleep(gap)
+                        last_request[0]=time.monotonic()
+                        reply=route.fetch(timeout=25000)
+                        for attempt in range(2):
+                            if reply.status!=429:break
+                            time.sleep(1.0*(attempt+1))
+                            last_request[0]=time.monotonic()
+                            reply=route.fetch(timeout=25000)
                     api_requests.append(route.request.url)
-                    reply=route.fetch(timeout=25000)
                     if reply.status!=200 and not ("/v1/cricket/discipline-" in route.request.url and reply.status in (404,503)):
-                        raise AssertionError("Live API failed: "+str(reply.status))
+                        raise AssertionError("Live API failed: "+str(reply.status)+" route="+route.request.url.split("?",1)[0])
                     headers=dict(reply.headers)
                     # The real service explicitly accepts the published github.io
                     # origin, not this local preview. CORS adapted for UI-only smoke.
@@ -72,18 +84,53 @@ def run():
                     page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                     assert not page.locator("#output-results").get_by_text("Results service unavailable").count()
                     checked.append(name)
+                # The same format pages must switch between independent disciplines
+                # without special discipline navigation links.
+                assert page.locator('#sidebar [data-view="bowling"]').count()==0
+                assert page.locator('#sidebar [data-view="allrounder"]').count()==0
+                assert page.locator('#discipline-selector option').count()==3
                 for discipline in ("bowling","allrounder"):
-                    page.goto(origin+"/#"+discipline)
-                    page.locator("#discipline-results").wait_for(timeout=20000)
-                    # Existing live backend may not have the new optional research
-                    # projection yet. The page must fail closed with a truthful
-                    # unavailable message rather than misrepresent old batting.
+                    page.goto(origin+"/#test")
+                    page.locator("#discipline-selector").select_option(discipline)
+                    for fmt in ("test","odi","t20i"):
+                        page.goto(origin+"/#"+fmt)
+                        page.locator("#discipline-results tbody tr").first.wait_for(timeout=20000)
+                        page.locator("[data-discipline-player]").first.click()
+                        page.locator("#discipline-profile h3").wait_for(timeout=20000)
+                        assert "Cricsheet" in page.locator("#discipline-profile").inner_text()
+                        checked.append(discipline+"-"+fmt)
+                    page.goto(origin+"/#compare")
+                    page.locator("#compare-hits [data-compare-id]").first.wait_for(timeout=20000)
+                    assert page.locator("#compare-discipline").input_value()==discipline
+                    page.locator("#compare-side-first").click()
+                    page.locator("#compare-hits [data-compare-id]").first.click()
+                    page.locator("#compare-first-result h3").wait_for(timeout=20000)
+                    page.locator("#compare-side-second").click()
+                    page.locator("#compare-hits [data-compare-id]").last.click()
+                    page.locator("#compare-second-result h3").wait_for(timeout=20000)
+                    checked.append(discipline+"-comparison")
+                    page.goto(origin+"/#methodology")
+                    assert discipline in page.locator("#sidebar-status").inner_text().lower() or (
+                        "All-Rounders" in page.locator("#sidebar-status").inner_text())
+                    page.goto(origin+"/#coverage")
+                    page.locator("#page-body tbody tr").first.wait_for(timeout=20000)
+                    page.goto(origin+"/#matches")
+                    page.locator("#discipline-match-results").wait_for(timeout=20000)
+                    assert "Modern Cricsheet match summaries only" in page.locator("#page-body").inner_text()
+                    # Until the new reviewed match projection is deployed to AWS,
+                    # the old service returns a bounded 404. We must never substitute
+                    # batting innings for missing bowling or all-rounder evidence.
                     page.wait_for_function("""() => {
-                      const el=document.querySelector('#discipline-results');
-                      return el && (!el.textContent.includes('Loading bounded player results'));
+                      const el=document.querySelector('#discipline-match-results');
+                      return el && !el.textContent.includes('Loading bounded match results');
                     }""",timeout=20000)
-                    assert page.locator("#discipline-results").inner_text().strip()
-                    checked.append(discipline+"-page")
+                    if page.locator("#discipline-match-results tbody tr").count():
+                        page.locator("[data-discipline-match-id]").first.click()
+                        page.get_by_text("Match summary",exact=False).last.wait_for(timeout=20000)
+                    else:
+                        assert "Results service unavailable" in page.locator("#discipline-match-results").inner_text()
+                    checked.append(discipline+"-match-explorer")
+                page.locator("#discipline-selector").select_option("batting")
                 page.goto(origin+"/#test")
                 page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
                 page.locator("[data-player]").first.click()
