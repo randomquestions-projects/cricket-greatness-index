@@ -243,7 +243,7 @@ async function disciplineRanking(fmt){
 function disciplineCard(p,fmt,discipline){
  if(!p)return '<div class="panel">Player not available in this discipline and format.</div>';
  const columns=discipline==='bowling'?
-   [['Greatness',p.greatness],['Quality',p.quality],['Career',p.career],
+   [['Career greatness',p.career],['JAWS-inspired greatness',p.greatness],['Quality',p.quality],
     ['Peak',p.peak],['Wickets',p.wickets],['Innings',p.innings],
     ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate]]:
    [['Career greatness',p.career],['All-rounder JAWS',p.greatness],['Batting percentile',p.batting],
@@ -320,6 +320,7 @@ function profileCard(p,fmt){
  return '<article class="player-card"><small>'+E(p.team)+' · '+I(p.innings??p.totalInnings)+
  ' observed innings</small><h3>'+E(p.name)+'</h3>'+
  '<div class="inline-metrics">'+[
+ ['Career greatness',p.careerGreatness??p.overallCareerPercentile],
  ['Quality',p.quality??p.overallQualityPercentile],
  ['Team carry',p.teamCarry??p.overallCarryPercentile],
  ['JAWS percentile',p.jawsPercentile??p.overallJawsPercentile]
