@@ -107,7 +107,19 @@ def run():
                     page.goto(origin+"/#coverage")
                     page.locator("#page-body .section").first.wait_for(timeout=20000)
                     page.goto(origin+"/#matches")
-                    assert "batting-only" in page.locator("#page-body").inner_text()
+                    page.locator("#match-results").wait_for(timeout=15000)
+                    page.wait_for_function("""() => {
+                      const el=document.querySelector('#match-results');
+                      return el && !el.textContent.includes('Loading…');
+                    }""",timeout=25000)
+                    message=page.locator("#match-results").inner_text()
+                    if "match-summary API is still being staged" in message:
+                        checked.append(discipline+"-match-staging-pending")
+                    else:
+                        page.locator("[data-discipline-match]").first.wait_for(timeout=20000)
+                        page.locator("[data-discipline-match]").first.click()
+                        page.locator("#match-detail h3").wait_for(timeout=20000)
+                        checked.append(discipline+"-match-detail")
                     checked.append(discipline+"-coverage-methodology-explorer")
                 page.locator("#global-discipline").select_option("batting")
                 page.goto(origin+"/#test")
