@@ -15,6 +15,7 @@ import re
 import shutil
 import tempfile
 import threading
+import time
 from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
@@ -52,7 +53,17 @@ def run():
                     if not route.request.url.startswith(api+"/v1/cricket/"):
                         raise AssertionError("Browser attempted external unapproved API fetch")
                     api_requests.append(route.request.url)
-                    reply=route.fetch(timeout=25000)
+                    # Staging gateway limits sustained traffic to ~3 req/s.
+                    # This browser suite navigates every route rapidly; obey
+                    # the actual throttle and retry only transient HTTP 429.
+                    if api_requests:
+                        time.sleep(0.45)
+                    reply=None
+                    for attempt in range(6):
+                        reply=route.fetch(timeout=25000)
+                        if reply.status!=429:
+                            break
+                        time.sleep(min(1.5*(attempt+1),5))
                     if reply.status!=200 and not ("/v1/cricket/discipline-" in route.request.url
                          and reply.status in (400,404,503)):
                         raise AssertionError("Live API failed: "+str(reply.status))
