@@ -59,6 +59,77 @@ function table(head,rows){
  return '<div class="table-scroller"><table><thead><tr>'+head.map(s=>'<th>'+E(s)+'</th>').join('')+
  '</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
+
+/* ICC membership is based on present-day Full Member teams, not historic
+   membership when a particular innings was played. All filters execute on
+   bounded server-side ranking queries and are applied before pagination. */
+function ensureRankingRange(fmt){
+ const context=state.discipline+':'+fmt;
+ if(state.inningsContext!==context){
+  state.inningsContext=context;
+  state.inningsMin='';state.inningsMax='';state.inningsBound=null;
+ }
+}
+function rankingFiltersParams(){
+ return {fullMember:state.fullMember,minInnings:state.inningsMin,maxInnings:state.inningsMax};
+}
+function sharedRankingFilters(){
+ return '<label>ICC Full Members<select id="full-member-filter" aria-label="ICC Full Members">'+
+ ['all','yes','no'].map(x=>'<option value="'+x+'"'+(state.fullMember===x?' selected':'')+'>'+
+  ({all:'All teams',yes:'Yes — Full Members',no:'No — Other teams'}[x])+'</option>').join('')+
+ '</select></label><div class="innings-filter" id="innings-range-host" aria-label="Number of innings range">'+
+ (state.inningsBound==null?'<span class="range-placeholder">Loading innings range…</span>':inningsRangeHTML())+
+ '</div>';
+}
+function inningsRangeHTML(){
+ const cap=Math.max(0,Number(state.inningsBound)||0);
+ const low=Math.min(cap,Math.max(0,state.inningsMin===''?0:Number(state.inningsMin)));
+ const high=Math.max(low,Math.min(cap,state.inningsMax===''?cap:Number(state.inningsMax)));
+ const lowPct=cap?Math.round(low*100/cap):0;
+ const highPct=cap?Math.round(high*100/cap):100;
+ return '<fieldset class="innings-fieldset"><legend>Number of innings</legend>'+
+ '<div class="innings-number-row"><label>Minimum<input id="innings-min" inputmode="numeric" type="number" min="0" max="'+cap+
+ '" step="1" value="'+low+'" aria-label="Minimum innings"></label>'+
+ '<span aria-hidden="true">–</span>'+
+ '<label>Maximum<input id="innings-max" inputmode="numeric" type="number" min="0" max="'+cap+
+ '" step="1" value="'+high+'" aria-label="Maximum innings"></label></div>'+
+ '<div class="innings-dual" style="--range-low:'+lowPct+'%;--range-high:'+highPct+'%">'+
+ '<input type="range" id="innings-low" min="0" max="'+cap+'" value="'+low+
+ '" step="1" aria-label="Minimum innings slider"'+(cap===0?' disabled':'')+'>'+
+ '<input type="range" id="innings-high" min="0" max="'+cap+'" value="'+high+
+ '" step="1" aria-label="Maximum innings slider"'+(cap===0?' disabled':'')+'>'+
+ '</div><div class="innings-range-hint">Inclusive · '+I(low)+'–'+I(high)+' innings'+
+ (state.discipline==='allrounder'?' (batting innings)':'')+'</div></fieldset>';
+}
+function paintInningsFilter(bounds){
+ if(!bounds||typeof bounds.max!=='number')throw new Error('Rankings API lacks innings-range support');
+ const cap=Math.max(0,Math.min(10000,Math.floor(bounds.max)));
+ state.inningsBound=cap;
+ const node=$('#innings-range-host');
+ if(node)node.innerHTML=inningsRangeHTML();
+}
+function changeInningsSelection(changed){
+ if(state.inningsBound==null)return;
+ const cap=state.inningsBound;
+ const lower=$('#innings-min'),upper=$('#innings-max'),lowSlider=$('#innings-low'),highSlider=$('#innings-high');
+ if(!lower||!upper||!lowSlider||!highSlider)return;
+ let lo=Number((changed==='innings-low'?lowSlider:lower).value);
+ let hi=Number((changed==='innings-high'?highSlider:upper).value);
+ if(!Number.isFinite(lo)||!Number.isFinite(hi))return;
+ lo=Math.round(Math.max(0,Math.min(cap,lo)));
+ hi=Math.round(Math.max(0,Math.min(cap,hi)));
+ if(lo>hi){if(changed==='innings-low'||changed==='innings-min')hi=lo;else lo=hi}
+ state.inningsMin=lo===0?'':String(lo);
+ state.inningsMax=hi===cap?'':String(hi);
+ for(const [el,value] of [[lower,lo],[lowSlider,lo],[upper,hi],[highSlider,hi]])el.value=value;
+ const wrap=$('.innings-dual');
+ if(wrap){wrap.style.setProperty('--range-low',(cap?lo*100/cap:0)+'%');
+          wrap.style.setProperty('--range-high',(cap?hi*100/cap:100)+'%')}
+ const hint=$('.innings-range-hint');
+ if(hint)hint.textContent='Inclusive · '+I(lo)+'–'+I(hi)+' innings'+
+       (state.discipline==='allrounder'?' (batting innings)':'');
+}
+
 async function overview(){
  const current=state.discipline,serial=++requestSerial;
  const name={batting:'Batting',bowling:'Bowling',allrounder:'All-Rounder'}[current];
@@ -501,6 +572,10 @@ async function render(){
 }
 function delayed(callback){clearTimeout(searchTimer);searchTimer=setTimeout(callback,280)}
 document.addEventListener('input',ev=>{
+ if(['innings-low','innings-high','innings-min','innings-max'].includes(ev.target.id)){
+   if(ev.target.value!=='')changeInningsSelection(ev.target.id);
+   return;
+ }
  if(ev.target.id==='output-search'){state.search=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
  if(ev.target.id==='output-country'){state.country=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
  if(ev.target.id==='discipline-search'){state.disciplineSearch=ev.target.value;state.disciplinePage=0;delayed(()=>disciplineRanking(state.format))}
@@ -514,10 +589,18 @@ document.addEventListener('input',ev=>{
  }
 });
 document.addEventListener('change',ev=>{
+
+ if(ev.target.id==='full-member-filter'){
+  state.fullMember=ev.target.value;state.page=0;state.disciplinePage=0;ranking(state.format);
+ }
+ if(['innings-low','innings-high','innings-min','innings-max'].includes(ev.target.id)){
+  changeInningsSelection(ev.target.id);
+  state.page=0;state.disciplinePage=0;ranking(state.format);
+ }
  if(ev.target.id==='global-discipline'){
    if(!['batting','bowling','allrounder'].includes(ev.target.value))return;
    state.discipline=ev.target.value;
-   state.page=0;state.disciplinePage=0;state.disciplineMetric='career';
+   state.page=0;state.disciplinePage=0;state.disciplineMetric='career';state.inningsContext='';
    state.first=null;state.second=null;state.firstSearch='';state.secondSearch='';
    render();
  }
