@@ -371,8 +371,20 @@ async function searchComparison(){
  }
 }
 async function matches(){
+ if(state.discipline!=='batting'){
+   hero('Match <em>Explorer</em>',
+     'Explore international cricket with source-backed match evidence.');
+   $('#page-body').innerHTML='<div class="callout">The existing bounded Match Explorer contains batting innings only. '+
+      'Verified per-match '+E(DISCIPLINES[state.discipline].toLowerCase())+
+      ' figures are not yet available in the public API, so batting innings will not be mislabeled as bowling or all-rounder match analysis.</div>'+
+      panel('Research available now','<p>Player-level '+E(DISCIPLINES[state.discipline].toLowerCase())+
+       ' rankings and profiles are available by international format.</p>'+
+       '<div class="view-grid">'+FORMATS.map(fmt=>'<a class="view-card" href="#'+fmt+'"><strong>'+
+         E(LABEL[fmt])+'</strong><span>View player rankings →</span></a>').join('')+'</div>');
+   return;
+ }
  hero('Match <em>Explorer</em>',
- 'Bounded Cricsheet-derived batting displays through the private-backed API, never a bulk source file.');
+ 'Bounded Cricsheet-derived batting innings through the private-backed API, never a bulk source file.');
  $('#page-body').innerHTML='<section class="section"><div class="controls">'+
  '<label>Format<select id="match-format">'+FORMATS.map(f=>'<option value="'+f+'"'+
  (f===state.matchFormat?' selected':'')+'>'+E(LABEL[f])+'</option>').join('')+'</select></label>'+
@@ -410,36 +422,71 @@ async function matchDetail(inningsId,playerId){
        '<tr><td>'+E(t.n)+'</td><td>'+I(t.r)+'</td><td>'+I(t.b)+'</td></tr>')));
  }catch(e){showError(area,e)}
 }
-function coverage(){
+async function coverage(){
  hero('Data, coverage & <em>limitations</em>',
-  'Source-coverage limitations and player-level model output, not independently certified all-time scorecards.');
+   'An account of the evidence supporting '+DISCIPLINES[state.discipline].toLowerCase()+
+   ' models, not official complete all-time scorecards.');
+ if(state.discipline!=='batting'){
+   let data;
+   try{data=await loadDisciplineMeta()}catch(err){showError($('#page-body'),err);return}
+   const formats=data.formats[state.discipline]||{};
+   const rows=ALL.map(fmt=>{
+     const record=formats[fmt]||{};
+     return '<tr><td>'+E(LABEL[fmt])+'</td><td>'+I(record.qualifiedPlayers)+'</td>'+
+       '<td>'+E(COMBOS.includes(fmt)?'Shared eligible provider IDs':'Modern Cricsheet only')+'</td></tr>';
+   });
+   $('#page-body').innerHTML=panel('Eligible '+DISCIPLINES[state.discipline].toLowerCase()+' by format',
+       table(['Format','Qualified players','Coverage basis'],rows))+
+       '<div class="callout">Older restricted historical source data is not released into these public rankings. '+
+       'Cross-era player identities, an official match-level census and historical completeness remain uncertified. '+
+       'For combined formats, each player must be independently qualified in every constituent format.</div>';
+   return;
+ }
  const c=meta.coverage||{};
  const rows=FORMATS.map(f=>{
-  const x=c.formats?.[f]||{};
-  return '<tr><td>'+E(LABEL[f])+'</td><td>'+I(x.observedMatches)+
-   '</td><td>'+I(x.deliveryMatches)+'</td><td>'+
-   I(x.historicalScorecardMatches)+'</td></tr>';
+   const x=c.formats?.[f]||{};
+   return '<tr><td>'+E(LABEL[f])+'</td><td>'+I(x.observedMatches)+
+    '</td><td>'+I(x.deliveryMatches)+'</td><td>'+
+    I(x.historicalScorecardMatches)+'</td></tr>';
  });
  $('#page-body').innerHTML=panel('Observed international match coverage',
     table(['Format','Observed matches','Modern delivery matches','Historic batting-only matches'],rows))+
- '<div class="callout">Historical batting and bowling source records are not available for download. '+ 
+ '<div class="callout">Historical batting and bowling source records are not available for download. '+
  'Official match-level completeness and all-time greatness rankings remain unverified.</div>'+
  panel('Reference career checks','<div class="panel">Validated career run totals: '+
  I(c.passingCareers)+' / '+I(c.checkedCareers)+
  '. Matching career totals does not certify all innings or player identities.</div>');
 }
 function methodology(){
+ const discipline=state.discipline;
  hero('How the <em>index works</em>',
-  'A plain-language explanation of derived measurements; raw data, code and model fitting remain private.');
- const items=[
- ['Era adjusted quality','Compare player performance with peers in the same era and format.'],
- ['Opposition','Adjust using opponent strength proxies where available.'],
- ['Team carry','Estimate contribution relative to the observed teammates.'],
- ['Home and away','Account for known host conditions, leaving uncertain venues unknown.'],
- ['Peak and longevity','Show career, best seasons, short-term peak and JAWS-style indices.']];
- $('#page-body').innerHTML=panel('Model overview','<div class="trio">'+items.map(([a,b])=>
- '<article class="panel"><h3>'+E(a)+'</h3><p>'+E(b)+'</p></article>').join('')+
- '</div><p class="note">Scores are experimental research outputs, not official all-time certifications.</p>');
+   'A plain-language explanation of '+DISCIPLINES[discipline].toLowerCase()+
+   ' scores. The data and research models remain private.');
+ const items=discipline==='bowling'?[
+  ['Era and opposition peers','Compare wickets per legal ball and runs conceded to bowlers from the same source tier within a ±3-year window, excluding the player. Opponent-specific peer evidence is used only when sufficiently supported.'],
+  ['Bowling quality','Combine observed wicket-rate advantage (70%) and runs-conceded advantage (30%) with bounded log-ratio adjustments and evidence shrinkage.'],
+  ['Career and peak','Score the whole observed career and the best seven seasons; report a JAWS-inspired average of career and peak.'],
+  ['Evidence limitations','Opposition conditioning is a peer-outcome proxy, not independently certified opponent batting strength, pitch or venue adjustment.']
+ ]:discipline==='allrounder'?[
+  ['Batting contribution','Within each format, percentile-rank batting greatness among qualified batters.'],
+  ['Bowling contribution','Within the same format, percentile-rank bowling greatness among qualified bowlers.'],
+  ['Two-way index','Combine batting and bowling percentiles with their harmonic mean; both disciplines must be present, which penalizes one-sided specialists.'],
+  ['Verified identity','Automatically join only the same immutable Cricsheet player ID and compatible team. Historical name-based matching is excluded.'],
+  ['Multiple formats','For Tests + ODIs and All Three Formats, average separately normalized format percentiles only for players qualified in every selected format.']
+ ]:[
+  ['Era-adjusted quality','Compare player performance with peers in the same era and format.'],
+  ['Opposition','Adjust using opponent strength proxies where available.'],
+  ['Team carry','Estimate contribution relative to the observed teammates.'],
+  ['Home and away','Account for known host conditions, leaving uncertain venues unknown.'],
+  ['Peak and longevity','Show career, best seasons, short-term peak and JAWS-inspired indices.']
+ ];
+ if(discipline==='bowling'){
+  items.push(['Multiple formats','For combined formats, aggregate within-format greatness percentiles across verified provider IDs, not incompatible raw scores.']);
+ }
+ $('#page-body').innerHTML=panel(DISCIPLINES[discipline]+' model overview',
+  '<div class="trio">'+items.map(([a,b])=>
+  '<article class="panel"><h3>'+E(a)+'</h3><p>'+E(b)+'</p></article>').join('')+
+  '</div><p class="note">Scores are provisional research outputs, not official all-time certifications.</p>');
 }
 async function render(){
  const route=currentRoute();
