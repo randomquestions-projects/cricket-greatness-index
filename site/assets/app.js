@@ -114,37 +114,38 @@ const D_METRICS={
              bowling:'Bowling percentile',runs:'Runs',wickets:'Wickets'}
 };
 function disciplineForm(discipline){
- const formatOptions=FORMATS.map(f=>'<option value="'+f+'"'+(f===state.disciplineFormat?' selected':'')+'>'+E(LABEL[f])+'</option>').join('');
- const metricOptions=Object.entries(D_METRICS[discipline]).map(([key,label])=>
+ const options=Object.entries(D_METRICS[discipline]).map(([key,label])=>
    '<option value="'+E(key)+'"'+(key===state.disciplineMetric?' selected':'')+'>'+E(label)+'</option>').join('');
  return '<div class="controls">'+
- '<label>Format<select id="discipline-format">'+formatOptions+'</select></label>'+
- '<label>Rank by<select id="discipline-metric">'+metricOptions+'</select></label>'+
+ '<label>Rank by<select id="discipline-metric">'+options+'</select></label>'+
  '<label>Search player<input id="discipline-search" placeholder="Player or country" value="'+E(state.disciplineSearch)+'"></label>'+
  '<label>Country<input id="discipline-country" placeholder="Country" value="'+E(state.disciplineCountry)+'"></label></div>';
 }
-async function disciplineRanking(discipline){
+async function disciplineRanking(discipline,fmt){
  if(!D_METRICS[discipline])return;
  if(!D_METRICS[discipline][state.disciplineMetric])state.disciplineMetric='greatness';
  const serial=++requestSerial;
  const active=document.activeElement?.id||'';
  const caret=(active==='discipline-search'||active==='discipline-country')?
     document.activeElement.selectionStart:null;
- const heading=discipline==='bowling'?'Bowling':'All-Rounder';
- hero(heading+' <em>Greatness Index</em>',
-  'Experimental Test, ODI and T20I player rankings based on modern Cricsheet-derived summaries. Historical all-time coverage is not yet certified.');
- $('#page-body').innerHTML='<div class="callout">Research preview · Modern Cricsheet records only. The older historical bowling archive and unverified cross-source player identities are excluded from this public ranking.</div>'+
- panel('Explore '+heading+' rankings',disciplineForm(discipline)+
+ const heading=DISCIPLINES[discipline];
+ hero(E(LABEL[fmt])+' <em>'+heading+' Greatness</em>',
+  'Experimental '+heading.toLowerCase()+' rankings from modern Cricsheet-only qualified records.');
+ $('#page-body').innerHTML=
+ '<div class="callout">Research preview · Modern Cricsheet only. '+
+ (COMBOS.includes(fmt)?'Combined scores average normalized within-format scores for players with verified matching IDs in every selected format.':
+ 'Historic bowling archives and unverified cross-source player identity merges are excluded.')+
+ '</div>'+
+ panel('Explore '+heading.toLowerCase()+' rankings',disciplineForm(discipline)+
     '<div id="discipline-results" class="panel">Loading bounded player results…</div>'+
     '<div id="discipline-profile"></div>');
  if(caret!==null){const field=$('#'+active);if(field){
     field.focus();field.setSelectionRange(caret,caret)}}
  try{
-  const result=await get('discipline-rankings',{discipline,
-     format:state.disciplineFormat,metric:state.disciplineMetric,
-     search:state.disciplineSearch,country:state.disciplineCountry,
-     page:state.disciplinePage});
-  if(serial!==requestSerial||state.view!==discipline)return;
+  const result=await get('discipline-rankings',{discipline,format:fmt,
+     metric:state.disciplineMetric,search:state.disciplineSearch,
+     country:state.disciplineCountry,page:state.disciplinePage});
+  if(serial!==requestSerial||state.view!==fmt||state.discipline!==discipline)return;
   if(result.schemaVersion!=='cricket-discipline-projection-v1')
     throw new Error('Research result schema not approved');
   const headers=discipline==='bowling'?
@@ -169,38 +170,47 @@ async function disciplineRanking(discipline){
     ((result.page+1)*result.pageSize>=result.total?' disabled':'')+'>Next →</button></div>';
   $('#discipline-results').innerHTML=
     (rows.length?table(headers,rows):'<p>No eligible players in this filter.</p>')+paging+
-    '<p class="note">Per-format within-cohort experimental model output. Click a player to review permitted summary metrics; no raw scorecards or archives are served.</p>';
+    '<p class="note">'+(COMBOS.includes(fmt)?
+      'Combined scores are percentile-normalized within each format. Raw Test and limited-overs scores are not added.':
+      'Provisional within-format model ranking.')+
+    ' Click a player to review permitted summary metrics; raw source archives remain private.</p>';
  }catch(err){
   if(serial!==requestSerial)return;
-  const area=$('#discipline-results');
-  if(area)area.innerHTML='<div class="callout">Bowling and all-rounder results are being connected to their verified private Gold deployment. Batting rankings and Match Explorer remain available. This view does not invent rankings while the API is unavailable.</div>';
+  showError($('#discipline-results'),err);
  }
 }
-async function disciplineProfile(discipline,playerId){
- const area=$('#discipline-profile');if(!area)return;
- area.innerHTML='<div class="panel">Loading player summary…</div>';
- try{
-  const payload=await get('discipline-player',{discipline,format:state.disciplineFormat,playerId});
-  if(!area.isConnected||state.view!==discipline)return;
-  const p=payload.player;
-  if(!p)throw new Error('Player no longer available');
-  const fields=discipline==='bowling'?
-   [['Bowling greatness',p.greatness],['Quality',p.quality],
-    ['Career',p.career],['Peak',p.peak],['Wickets',p.wickets],
-    ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate],
-    ['Opponent proxy evidence %',p.opponentEvidencePct]]:
-   [['All-rounder index',p.greatness],['Batting percentile',p.batting],
-    ['Bowling percentile',p.bowling],['Runs',p.runs],
-    ['Wickets',p.wickets],['Batting innings',p.battingInnings],
-    ['Bowling innings',p.bowlingInnings]];
-  area.innerHTML='<article class="player-card"><small>'+E(p.team)+' · '+
-    E(LABEL[state.disciplineFormat])+'</small><h3>'+E(p.name)+'</h3>'+
+function disciplineProfileCard(p,discipline,fmt){
+ if(!p)return '<div class="panel">Player profile unavailable.</div>';
+ const fields=discipline==='bowling'?
+  [['Greatness',p.greatness],['Quality',p.quality],
+   ['Career',p.career],['Peak',p.peak],['Wickets',p.wickets],
+   ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate],
+   ['Opponent peer evidence %',p.opponentEvidencePct]]:
+  [['All-rounder index',p.greatness],['Batting percentile',p.batting],
+   ['Bowling percentile',p.bowling],['Runs',p.runs],
+   ['Wickets',p.wickets],['Batting innings',p.battingInnings??p.innings],
+   ['Bowling innings',p.bowlingInnings]];
+ const breakdown=Array.isArray(p.formatBreakdown)?
+   panel('Format-by-format context',
+     table(['Format','Within-format score','Format percentile','Innings','Wickets','Runs'],
+     p.formatBreakdown.map(r=>'<tr><td>'+E(LABEL[r.format]||r.format)+'</td>'+
+      '<td>'+N(r.greatness)+'</td><td>'+N(r.formatGreatnessPercentile)+'</td>'+
+      '<td>'+I(r.innings)+'</td><td>'+I(r.wickets)+'</td><td>'+I(r.runs)+'</td></tr>'))):'';
+ return '<article class="player-card"><small>'+E(p.team)+' · '+
+    E(LABEL[fmt])+'</small><h3>'+E(p.name)+'</h3>'+
     '<div class="research-metric-grid">'+fields.map(([key,value])=>
     '<div><small>'+E(key)+'</small><b>'+N(value)+'</b></div>').join('')+'</div>'+
-    '<p class="note">Provisional modern-only Cricsheet model; no claim of all-era completeness or independently verified historical identity.</p></article>';
+    breakdown+
+    '<p class="note">Provisional modern-only Cricsheet research. Unverified historical identities and raw source records are not published.</p></article>';
+}
+async function disciplineProfile(discipline,id,fmt=state.format,selector='#discipline-profile'){
+ const area=$(selector);if(!area)return;
+ area.innerHTML='<div class="panel">Loading player summary…</div>';
+ try{
+  const payload=await get('discipline-player',{discipline,format:fmt,playerId:id});
+  if(area.isConnected)area.innerHTML=disciplineProfileCard(payload.player,discipline,fmt);
  }catch(err){if(area.isConnected)showError(area,err)}
 }
-
 async function ranking(fmt){
  hero(E(LABEL[fmt])+' <em>Batting Greatness</em>',
  'Search, filter and rank model-derived player summaries; raw batting and bowling records remain in private storage.');
