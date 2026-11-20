@@ -426,7 +426,7 @@ async function fetchDisciplineMatches(){
      '<button data-matchpage="1"'+((d.page+1)*d.pageSize>=d.total?' disabled':'')+
      '>Next →</button></div>';
   area.innerHTML=(rows.length?table(headers,rows):'<p>No eligible recorded matches match these filters.</p>')+
-   paging+'<p class="note">Displayed values are Cricsheet-derived match aggregates for model-qualified players; '+
+   paging+'<p class="note">Up to 60 most recent Cricsheet-derived match summaries per qualified player and format; full history stays private. '+
    'historical completeness is not certified.</p>';
  }catch(err){if(serial===requestSerial)showError(area,err)}
 }
