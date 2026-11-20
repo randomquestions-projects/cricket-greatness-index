@@ -29,10 +29,15 @@ function apiURL(path,params={}){
  return target.toString();
 }
 async function get(path,params={}){
- const res=await fetch(apiURL(path,params),{cache:'no-store',headers:{Accept:'application/json'}});
+ const target=apiURL(path,params);
+ let res;
+ for(let attempt=0;attempt<4;attempt++){
+  res=await fetch(target,{cache:'no-store',headers:{Accept:'application/json'}});
+  if(res.status!==429)break;
+  await new Promise(resolve=>setTimeout(resolve,450*(attempt+1)));
+ }
  if(!res.ok)throw new Error('Results service unavailable ('+res.status+')');
- const data=await res.json();
- return data;
+ return res.json();
 }
 function hero(title,desc){
  $('#page-header').innerHTML='<div class="eyebrow">INDEPENDENT CRICKET RESEARCH · OUTPUTS ONLY</div>'+
