@@ -95,7 +95,7 @@ def run():
                         }""",timeout=25000)
                         checked.append(discipline+"-"+fmt+"-page")
                     page.goto(origin+"/#compare")
-                    page.locator("#compare-player-first option").nth(1).wait_for(timeout=20000)
+                    page.locator("#compare-player-first option").nth(1).wait_for(state="attached",timeout=20000)
                     page.locator("#compare-player-first").select_option(index=1)
                     page.locator("#compare-first-result h3").wait_for(timeout=20000)
                     page.locator("#compare-player-second option").nth(1).wait_for(timeout=20000)
