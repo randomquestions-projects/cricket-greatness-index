@@ -78,6 +78,7 @@ def run():
                 assert page.locator('#sidebar [data-view="allrounder"]').count()==0
                 assert page.locator('#discipline-selector option').count()==3
                 for discipline in ("bowling","allrounder"):
+                    page.goto(origin+"/#test")
                     page.locator("#discipline-selector").select_option(discipline)
                     for fmt in ("test","odi","t20i"):
                         page.goto(origin+"/#"+fmt)
