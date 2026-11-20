@@ -380,28 +380,72 @@ async function searchComparison(){
  }
 }
 async function matches(){
- if(state.discipline!=='batting'){
-   hero('Match <em>Explorer</em>',
-     'Explore international cricket with source-backed match evidence.');
-   $('#page-body').innerHTML='<div class="callout">The existing bounded Match Explorer contains batting innings only. '+
-      'Verified per-match '+E(DISCIPLINES[state.discipline].toLowerCase())+
-      ' figures are not yet available in the public API, so batting innings will not be mislabeled as bowling or all-rounder match analysis.</div>'+
-      panel('Research available now','<p>Player-level '+E(DISCIPLINES[state.discipline].toLowerCase())+
-       ' rankings and profiles are available by international format.</p>'+
-       '<div class="view-grid">'+FORMATS.map(fmt=>'<a class="view-card" href="#'+fmt+'"><strong>'+
-         E(LABEL[fmt])+'</strong><span>View player rankings →</span></a>').join('')+'</div>');
-   return;
- }
+ const discipline=state.discipline;
  hero('Match <em>Explorer</em>',
- 'Bounded Cricsheet-derived batting innings through the private-backed API, never a bulk source file.');
- $('#page-body').innerHTML='<section class="section"><div class="controls">'+
+  'Browse bounded '+DISCIPLINES[discipline].toLowerCase()+
+  ' international match summaries from verified modern Cricsheet records.');
+ const d=discipline!=='batting';
+ const notice=d?'<div class="callout">Modern Cricsheet match summaries only. '+
+ 'Older historical bowling archives and unverified cross-source links are excluded. '+
+ 'These are derived match totals, not ball-by-ball scorecards.</div>':'';
+ $('#page-body').innerHTML=notice+'<section class="section"><div class="controls">'+
  '<label>Format<select id="match-format">'+FORMATS.map(f=>'<option value="'+f+'"'+
  (f===state.matchFormat?' selected':'')+'>'+E(LABEL[f])+'</option>').join('')+'</select></label>'+
- '<label>Batter<input id="match-search" value="'+E(state.matchSearch)+'" placeholder="Search…"></label>'+
+ '<label>Player<input id="match-search" value="'+E(state.matchSearch)+'" placeholder="Search…"></label>'+
  '<label>Opposition<input id="match-opposition" value="'+E(state.matchOpposition)+
- '" placeholder="Opposition…"></label></div><div id="match-results" class="panel">Loading…</div>'+
- '<div id="match-detail"></div></section>';
- await fetchMatches();
+ '" placeholder="Opposition…"></label></div><div id="'+(d?'discipline-match-results':'match-results')+
+ '" class="panel">Loading bounded match results…</div>'+
+ '<div id="'+(d?'discipline-match-detail':'match-detail')+'"></div></section>';
+ if(d)await fetchDisciplineMatches();else await fetchMatches();
+}
+async function fetchDisciplineMatches(){
+ const discipline=state.discipline,fmt=state.matchFormat;
+ const area=$('#discipline-match-results');if(!area)return;
+ const serial=++requestSerial;
+ try{
+  const d=await get('discipline-matches',{discipline,format:fmt,
+   search:state.matchSearch,opposition:state.matchOpposition,page:state.matchPage});
+  if(serial!==requestSerial||!area.isConnected||state.discipline!==discipline)return;
+  if(d.schemaVersion!=='cricket-discipline-matches-v1')
+    throw new Error('Unapproved Match Explorer response');
+  const bowling=discipline==='bowling';
+  const headers=bowling?['Date','Bowler','Opposition','Overs','Runs conceded','Wickets','Details']:
+    ['Date','Player','Opposition','Batting runs','Balls faced','Wickets','Bowling overs','Details'];
+  const overs=b=>b==null?'—':Math.floor(b/6)+'.'+(b%6);
+  const rows=(d.items||[]).map(p=>'<tr><td>'+E(p.date)+'</td><td>'+
+    E(p.name)+'<span class="team">'+E(p.team)+'</span></td><td>'+E(p.opposition)+
+    '</td>'+(bowling?'<td>'+overs(p.bowlingBalls)+'</td><td>'+I(p.runsConceded)+
+        '</td><td>'+I(p.wickets)+'</td>':
+       '<td>'+I(p.runs)+'</td><td>'+I(p.balls)+'</td><td>'+I(p.wickets)+
+        '</td><td>'+overs(p.bowlingBalls)+'</td>')+
+    '<td><button type="button" class="text-link" data-discipline-match-id="'+
+    E(p.matchId)+'">View match</button></td></tr>');
+  const paging='<div class="pager"><button data-matchpage="-1"'+
+     (d.page===0?' disabled':'')+'>← Previous</button><span>Page '+(d.page+1)+
+     ' · '+I(d.total)+' observed summaries</span>'+
+     '<button data-matchpage="1"'+((d.page+1)*d.pageSize>=d.total?' disabled':'')+
+     '>Next →</button></div>';
+  area.innerHTML=(rows.length?table(headers,rows):'<p>No eligible recorded matches match these filters.</p>')+
+   paging+'<p class="note">Displayed values are Cricsheet-derived match aggregates for model-qualified players; '+
+   'historical completeness is not certified.</p>';
+ }catch(err){if(serial===requestSerial)showError(area,err)}
+}
+async function disciplineMatchDetail(matchId){
+ const area=$('#discipline-match-detail');if(!area)return;
+ const discipline=state.discipline,fmt=state.matchFormat;
+ area.innerHTML='<div class="panel">Loading verified match summary…</div>';
+ try{
+  const result=await get('discipline-innings',{discipline,format:fmt,matchId});
+  if(!area.isConnected||state.discipline!==discipline||state.matchFormat!==fmt)return;
+  const p=result.selected;if(!p)throw new Error('Match summary unavailable');
+  const fields=[['Date',p.date],['Opponent',p.opposition],['Batting runs',I(p.runs)],
+     ['Balls faced',I(p.balls)],['Wickets',I(p.wickets)],
+     ['Bowling balls',I(p.bowlingBalls)],['Runs conceded',I(p.runsConceded)]];
+  area.innerHTML=panel('Match summary · '+p.name,
+    '<div class="research-metric-grid">'+fields.map(([label,value])=>
+      '<div><small>'+E(label)+'</small><b>'+E(value)+'</b></div>').join('')+'</div>'+
+    '<p class="note">One combined Cricsheet match summary, not a full downloadable scorecard.</p>');
+ }catch(err){if(area.isConnected)showError(area,err)}
 }
 async function fetchMatches(){
  const area=$('#match-results');if(!area)return;
@@ -559,8 +603,10 @@ document.addEventListener('input',ev=>{
    state.compareSearch=ev.target.value;
    delayed(()=>{if(state.view==='compare')searchComparison()});
  }
- if(ev.target.id==='match-search'){state.matchSearch=ev.target.value;state.matchPage=0;delayed(fetchMatches)}
- if(ev.target.id==='match-opposition'){state.matchOpposition=ev.target.value;state.matchPage=0;delayed(fetchMatches)}
+ if(ev.target.id==='match-search'){state.matchSearch=ev.target.value;state.matchPage=0;
+   delayed(()=>state.discipline==='batting'?fetchMatches():fetchDisciplineMatches())}
+ if(ev.target.id==='match-opposition'){state.matchOpposition=ev.target.value;state.matchPage=0;
+   delayed(()=>state.discipline==='batting'?fetchMatches():fetchDisciplineMatches())}
 });
 document.addEventListener('change',ev=>{
  if(ev.target.id==='discipline-selector'||ev.target.id==='compare-discipline'){
@@ -592,7 +638,10 @@ document.addEventListener('click',ev=>{
  const rp=ev.target.closest('[data-rankpage]');
  if(rp){state.page=Math.max(0,Math.min(49,state.page+Number(rp.dataset.rankpage)));ranking(state.format);return}
  const mp=ev.target.closest('[data-matchpage]');
- if(mp){state.matchPage=Math.max(0,Math.min(99,state.matchPage+Number(mp.dataset.matchpage)));fetchMatches();return}
+ if(mp){state.matchPage=Math.max(0,Math.min(49,state.matchPage+Number(mp.dataset.matchpage)));
+   if(state.discipline==='batting')fetchMatches();else fetchDisciplineMatches();return}
+ const modernMatch=ev.target.closest('[data-discipline-match-id]');
+ if(modernMatch){disciplineMatchDetail(modernMatch.dataset.disciplineMatchId);return}
  const detail=ev.target.closest('[data-match-innings]');
  if(detail){matchDetail(detail.dataset.matchInnings,detail.dataset.matchPlayer);return}
  const side=ev.target.closest('[id^=compare-side-]');
