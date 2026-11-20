@@ -115,8 +115,21 @@ def run():
                     page.goto(origin+"/#coverage")
                     page.locator("#page-body tbody tr").first.wait_for(timeout=20000)
                     page.goto(origin+"/#matches")
-                    assert "batting innings only" in page.locator("#page-body").inner_text()
-                    checked.append(discipline+"-research-scope")
+                    page.locator("#discipline-match-results").wait_for(timeout=20000)
+                    assert "Modern Cricsheet match summaries only" in page.locator("#page-body").inner_text()
+                    # Until the new reviewed match projection is deployed to AWS,
+                    # the old service returns a bounded 404. We must never substitute
+                    # batting innings for missing bowling or all-rounder evidence.
+                    page.wait_for_function("""() => {
+                      const el=document.querySelector('#discipline-match-results');
+                      return el && !el.textContent.includes('Loading bounded match results');
+                    }""",timeout=20000)
+                    if page.locator("#discipline-match-results tbody tr").count():
+                        page.locator("[data-discipline-match-id]").first.click()
+                        page.get_by_text("Match summary",exact=False).last.wait_for(timeout=20000)
+                    else:
+                        assert "Results service unavailable" in page.locator("#discipline-match-results").inner_text()
+                    checked.append(discipline+"-match-explorer")
                 page.locator("#discipline-selector").select_option("batting")
                 page.goto(origin+"/#test")
                 page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
