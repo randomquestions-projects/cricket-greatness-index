@@ -8,15 +8,15 @@ const LABEL={overview:'Overview',test:'Test Cricket',odi:'One-Day Internationals
  bowling:'Bowling Rankings',allrounder:'All-Rounder Rankings',
  compare:'Player Comparison',matches:'Match Explorer',
  methodology:'Index Methodology',coverage:'Data & Coverage'};
-const METRICS={jawsPercentile:'JAWS-inspired percentile',quality:'Era-adjusted quality',
- teamCarry:'Team carry',careerGreatness:'Career greatness',peakQuality:'Peak quality'};
+const METRICS={careerGreatness:'Career greatness',jawsPercentile:'JAWS-inspired percentile',
+ quality:'Era-adjusted quality',teamCarry:'Team carry',peakQuality:'Peak quality'};
 const E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const N=(v,d=1)=>v==null||!Number.isFinite(+v)?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
 const I=v=>N(v,0);
-const state={discipline:'batting',view:'overview',format:'test',metric:'jawsPercentile',search:'',country:'',
+const state={discipline:'batting',view:'overview',format:'test',metric:'careerGreatness',search:'',country:'',
  page:0,matchFormat:'odi',matchPage:0,matchSearch:'',matchOpposition:'',
  first:null,second:null,firstSearch:'',secondSearch:'',compareFormat:'test',
- disciplineFormat:'test',disciplineMetric:'greatness',disciplineSearch:'',disciplineCountry:'',disciplinePage:0};
+ disciplineFormat:'test',disciplineMetric:'career',disciplineSearch:'',disciplineCountry:'',disciplinePage:0,fullMember:'all',inningsMin:'',inningsMax:'',inningsBound:null,inningsContext:''};
 let meta=null,requestSerial=0,searchTimer;
 function apiURL(path,params={}){
  const base=String(window.CRICKET_OUTPUTS_API_BASE||'');
@@ -89,8 +89,8 @@ async function overview(){
    const p=(leaders[f]||[])[0];
    return '<a class="leader" href="#'+f+'"><small>'+E(LABEL[f])+'</small><h3>'+
    E(p?.name||'Unavailable')+'</h3><p>'+(current==='batting'?
-   'JAWS percentile '+N(p?.jawsPercentile):
-   'Provisional score '+N(p?.greatness))+' · '+I(p?.innings)+' innings</p>'+
+   'Career greatness '+N(p?.careerGreatness):
+   'Career greatness '+N(p?.career))+' · '+I(p?.innings)+' innings</p>'+
    '<span>Open '+E(name.toLowerCase())+' ranking →</span></a>';
   }).join('');
   const tiles=ALL.map(f=>'<a class="view-card" href="#'+f+'"><small>'+E(name.toUpperCase())+' ANALYSIS</small>'+
@@ -107,14 +107,15 @@ async function overview(){
 }
 const D_METRICS={
  bowling:{greatness:'Greatness index',quality:'Era & opponent peer quality',
-          career:'Career value',peak:'Peak quality',wickets:'Wickets'},
- allrounder:{greatness:'All-rounder index',batting:'Batting percentile',
+          career:'Career greatness',peak:'Peak quality',wickets:'Wickets'},
+ allrounder:{career:'Career greatness',greatness:'All-rounder JAWS index',batting:'Batting percentile',
              bowling:'Bowling percentile',runs:'Runs',wickets:'Wickets'}
 };
 async function disciplineRanking(fmt){
  const discipline=state.discipline;
  if(!D_METRICS[discipline])return;
- if(!D_METRICS[discipline][state.disciplineMetric])state.disciplineMetric='greatness';
+ if(!D_METRICS[discipline][state.disciplineMetric])state.disciplineMetric='career';
+ ensureRankingRange(fmt);
  const serial=++requestSerial,metric=state.disciplineMetric;
  const active=document.activeElement?.id||'';
  const caret=(active==='discipline-search'||active==='discipline-country')?
@@ -130,26 +131,27 @@ async function disciplineRanking(fmt){
    '</div><section class="section"><div class="controls">'+
    '<label>Rank by<select id="discipline-metric">'+metricOptions+'</select></label>'+
    '<label>Search player<input id="discipline-search" placeholder="Name or country" value="'+E(state.disciplineSearch)+'"></label>'+
-   '<label>Country<input id="discipline-country" placeholder="Filter country" value="'+E(state.disciplineCountry)+'"></label>'+
+   '<label>Country<input id="discipline-country" placeholder="Filter country" value="'+E(state.disciplineCountry)+'"></label>'+sharedRankingFilters()+
    '</div><div id="discipline-results" class="panel">Loading ranking results…</div></section>'+
    '<section class="section"><div id="discipline-profile"></div></section>';
  if(caret!==null){const el=$('#'+active);if(el){el.focus();el.setSelectionRange(caret,caret)}}
  try{
   const result=await get('discipline-rankings',{discipline,format:fmt,metric,
       search:state.disciplineSearch,country:state.disciplineCountry,
-      page:state.disciplinePage});
+      page:state.disciplinePage,...rankingFiltersParams()});
   if(serial!==requestSerial||state.view!==fmt||state.discipline!==discipline)return;
   if(result.schemaVersion!=='cricket-discipline-projection-v1')
       throw new Error('Unexpected research schema');
+   paintInningsFilter(result.inningsBounds);
   const head=discipline==='bowling'?
     ['Rank','Bowler / country',D_METRICS[discipline][metric],
      'Innings','Wickets','Quality','Career','Peak']:
     ['Rank','All-rounder / country',D_METRICS[discipline][metric],
-     'Batting innings','Runs','Wickets','Batting %ile','Bowling %ile'];
+     'Batting innings','Runs','Wickets','Career','Batting %ile','Bowling %ile'];
   const rows=(result.items||[]).map((p,i)=>{
    const cols=discipline==='bowling'?
       [I(p.innings),I(p.wickets),N(p.quality),N(p.career),N(p.peak)]:
-      [I(p.innings),I(p.runs),I(p.wickets),N(p.batting),N(p.bowling)];
+      [I(p.innings),I(p.runs),I(p.wickets),N(p.career),N(p.batting),N(p.bowling)];
    return '<tr><td>'+I(result.page*result.pageSize+i+1)+'</td><td>'+
      '<button class="text-link" data-discipline-player="'+E(p.playerId)+'">'+E(p.name)+
      '</button><span class="team">'+E(p.team)+'</span></td><td class="figure">'+
@@ -173,7 +175,7 @@ function disciplineCard(p,fmt,discipline){
    [['Greatness',p.greatness],['Quality',p.quality],['Career',p.career],
     ['Peak',p.peak],['Wickets',p.wickets],['Innings',p.innings],
     ['Bowling average',p.bowlingAverage],['Strike rate',p.strikeRate]]:
-   [['All-rounder index',p.greatness],['Batting percentile',p.batting],
+   [['Career greatness',p.career],['All-rounder JAWS',p.greatness],['Batting percentile',p.batting],
     ['Bowling percentile',p.bowling],['Runs',p.runs],['Wickets',p.wickets],
     ['Batting innings',p.battingInnings??p.innings],['Bowling innings',p.bowlingInnings]];
  return '<article class="player-card"><small>'+E(p.team)+' · '+E(LABEL[fmt])+
@@ -196,6 +198,7 @@ async function disciplineProfile(discipline,fmt,id,selector='#discipline-profile
 
 async function ranking(fmt){
  if(state.discipline!=='batting')return disciplineRanking(fmt);
+ ensureRankingRange(fmt);
  hero(E(LABEL[fmt])+' <em>Batting Greatness</em>',
  'Search, filter and rank model-derived player summaries; raw batting and bowling records remain in private storage.');
  const serial=++requestSerial;
@@ -208,7 +211,7 @@ async function ranking(fmt){
  $('#page-body').innerHTML='<section class="section"><div class="controls">'+
  '<label>Rank by<select id="output-metric">'+options+'</select></label>'+
  '<label>Search batter<input id="output-search" placeholder="Name or country" value="'+E(state.search)+'"></label>'+
- '<label>Country<input id="output-country" placeholder="Filter country" value="'+E(state.country)+'"></label>'+
+ '<label>Country<input id="output-country" placeholder="Filter country" value="'+E(state.country)+'"></label>'+sharedRankingFilters()+
  '</div><div id="output-results" class="panel">Loading ranking results…</div></section>'+
  '<section class="section"><div id="output-profile"></div></section>';
  if(caret!==null){
@@ -217,8 +220,9 @@ async function ranking(fmt){
  }
  try{
   const result=await get('rankings',{format:fmt,metric:m,search:state.search,
-        country:state.country,page:state.page});
+        country:state.country,page:state.page,...rankingFiltersParams()});
   if(serial!==requestSerial||state.view!==fmt)return;
+  paintInningsFilter(result.inningsBounds);
   const trs=result.items.map((p,i)=>'<tr><td>'+I(result.page*40+i+1)+'</td>'+
   '<td><button class="text-link" data-player="'+E(p.playerId)+'"><b>'+E(p.name)+
   '</b></button><span class="team">'+E(p.team)+'</span></td>'+
@@ -513,7 +517,7 @@ document.addEventListener('change',ev=>{
  if(ev.target.id==='global-discipline'){
    if(!['batting','bowling','allrounder'].includes(ev.target.value))return;
    state.discipline=ev.target.value;
-   state.page=0;state.disciplinePage=0;state.disciplineMetric='greatness';
+   state.page=0;state.disciplinePage=0;state.disciplineMetric='career';
    state.first=null;state.second=null;state.firstSearch='';state.secondSearch='';
    render();
  }
