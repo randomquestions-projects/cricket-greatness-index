@@ -137,7 +137,7 @@ def run():
                 page.locator(".leader").first.wait_for(timeout=10000)
                 assert page.locator('#sidebar [data-view="bowling"]').count()==0
                 assert page.locator("#discipline-selector option").count()==3
-                assert page.get_by_text("Player Comparison",exact=True).count()
+                assert "Player Comparison" in page.locator('#navigation [data-view="compare"]').inner_text()
                 checked=[]
                 for discipline in ("batting","bowling","allrounder"):
                     page.locator("#discipline-selector").select_option(discipline)
