@@ -488,45 +488,115 @@ function methodology(){
   '<article class="panel"><h3>'+E(a)+'</h3><p>'+E(b)+'</p></article>').join('')+
   '</div><p class="note">Scores are provisional research outputs, not official all-time certifications.</p>');
 }
+function setDiscipline(discipline){
+ if(!DISCIPLINES[discipline]||state.discipline===discipline)return;
+ state.discipline=discipline;
+ try{localStorage.setItem('cricket-discipline',discipline)}catch{}
+ state.page=0;state.disciplinePage=0;state.disciplineMetric='greatness';
+ state.disciplineCountry='';state.disciplineSearch='';
+ state.first=null;state.second=null;state.comparePicked={first:null,second:null};
+ state.compareCandidates=[];state.compareSearch='';state.activeCompareSide='first';
+ compareSearchSerial++;
+ render();
+}
 async function render(){
- const route=currentRoute();
+ let route=currentRoute();
+ if(route==='bowling'||route==='allrounder'){
+   // Existing shared links now use the same Test/ODI/T20I routes.
+   state.discipline=route;
+   try{localStorage.setItem('cricket-discipline',route)}catch{}
+   location.hash='#test';
+   return;
+ }
  state.view=route;navigation(route);
  if(!meta){try{meta=await get('bootstrap')}catch(e){showError($('#page-body'),e);return}}
- if(route==='overview')overview();
- else if(ALL.includes(route)){state.format=route;await ranking(route)}
- else if(route==='bowling'||route==='allrounder')await disciplineRanking(route)
+ const notice=$('#research-notice');
+ if(notice)notice.textContent=state.discipline==='batting'?
+   'Batting: preserved historical derived model. Completeness is provisional; original source data remains private.':
+   DISCIPLINES[state.discipline]+': verified modern Cricsheet-only display outputs; historical cross-era completeness unverified.';
+ if(route==='overview')await overview();
+ else if(ALL.includes(route)){
+    state.format=route;
+    if(state.discipline==='batting')await ranking(route);
+    else await disciplineRanking(state.discipline,route);
+ }
  else if(route==='compare')await compare();
  else if(route==='matches')await matches();
  else if(route==='methodology')methodology();
- else if(route==='coverage')coverage();
- $('#sidebar-status').textContent='Private-backed research results';
+ else if(route==='coverage')await coverage();
+ $('#sidebar-status').textContent=DISCIPLINES[state.discipline]+' · Private-backed research';
 }
 function delayed(callback){clearTimeout(searchTimer);searchTimer=setTimeout(callback,280)}
 document.addEventListener('input',ev=>{
- if(ev.target.id==='output-search'){state.search=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
- if(ev.target.id==='output-country'){state.country=ev.target.value;state.page=0;delayed(()=>ranking(state.format))}
- if(ev.target.id==='compare-search'){state.compareSearch=ev.target.value;delayed(searchComparison)}
+ if(ev.target.id==='output-search'){
+   state.search=ev.target.value;state.page=0;
+   delayed(()=>{if(state.discipline==='batting'&&ALL.includes(state.view))ranking(state.format)});
+ }
+ if(ev.target.id==='output-country'){
+   state.country=ev.target.value;state.page=0;
+   delayed(()=>{if(state.discipline==='batting'&&ALL.includes(state.view))ranking(state.format)});
+ }
+ if(ev.target.id==='discipline-search'){
+   state.disciplineSearch=ev.target.value;state.disciplinePage=0;
+   delayed(()=>{if(state.discipline!=='batting'&&ALL.includes(state.view))
+      disciplineRanking(state.discipline,state.format)});
+ }
+ if(ev.target.id==='discipline-country'){
+   state.disciplineCountry=ev.target.value;state.disciplinePage=0;
+   delayed(()=>{if(state.discipline!=='batting'&&ALL.includes(state.view))
+      disciplineRanking(state.discipline,state.format)});
+ }
+ if(ev.target.id==='compare-search'){
+   state.compareSearch=ev.target.value;
+   delayed(()=>{if(state.view==='compare')searchComparison()});
+ }
  if(ev.target.id==='match-search'){state.matchSearch=ev.target.value;state.matchPage=0;delayed(fetchMatches)}
  if(ev.target.id==='match-opposition'){state.matchOpposition=ev.target.value;state.matchPage=0;delayed(fetchMatches)}
 });
 document.addEventListener('change',ev=>{
+ if(ev.target.id==='discipline-selector'||ev.target.id==='compare-discipline'){
+   setDiscipline(ev.target.value);
+   return;
+ }
  if(ev.target.id==='output-metric'){state.metric=ev.target.value;state.page=0;ranking(state.format)}
- if(ev.target.id==='compare-format'){state.compareFormat=ev.target.value;state.first=null;state.second=null;state.compareSearch='';compare()}
+ if(ev.target.id==='discipline-metric'){
+   state.disciplineMetric=ev.target.value;state.disciplinePage=0;
+   disciplineRanking(state.discipline,state.format);
+ }
+ if(ev.target.id==='compare-format'){
+   state.compareFormat=ev.target.value;state.first=null;state.second=null;
+   state.comparePicked={first:null,second:null};
+   state.compareCandidates=[];state.compareSearch='';compare();
+ }
+ if(ev.target.id==='compare-first-select')chooseComparison('first',ev.target.value);
+ if(ev.target.id==='compare-second-select')chooseComparison('second',ev.target.value);
  if(ev.target.id==='match-format'){state.matchFormat=ev.target.value;state.matchPage=0;matches()}
 });
 document.addEventListener('click',ev=>{
+ const dp=ev.target.closest('[data-discipline-player]');
+ if(dp){disciplineProfile(state.discipline,dp.dataset.disciplinePlayer,state.format);return}
+ const rp2=ev.target.closest('[data-discipline-page]');
+ if(rp2){state.disciplinePage=Math.max(0,Math.min(49,
+    state.disciplinePage+Number(rp2.dataset.disciplinePage)));
+    disciplineRanking(state.discipline,state.format);return}
  const p=ev.target.closest('[data-player]');if(p){showProfile(state.format,p.dataset.player);return}
- const rp=ev.target.closest('[data-rankpage]');if(rp){state.page=Math.max(0,Math.min(49,state.page+Number(rp.dataset.rankpage)));ranking(state.format);return}
- const mp=ev.target.closest('[data-matchpage]');if(mp){state.matchPage=Math.max(0,Math.min(99,state.matchPage+Number(mp.dataset.matchpage)));fetchMatches();return}
- const detail=ev.target.closest('[data-match-innings]');if(detail){matchDetail(detail.dataset.matchInnings,detail.dataset.matchPlayer);return}
- const side=ev.target.closest('[id^=compare-side-]');if(side){state.activeCompareSide=side.id.slice('compare-side-'.length);return}
- const chosen=ev.target.closest('[data-compare-id]');if(chosen){
-  const side=state.activeCompareSide;
-  state[side]=chosen.dataset.compareId;
-  showProfile(state.compareFormat,chosen.dataset.compareId,'#compare-'+side+'-result');
+ const rp=ev.target.closest('[data-rankpage]');
+ if(rp){state.page=Math.max(0,Math.min(49,state.page+Number(rp.dataset.rankpage)));ranking(state.format);return}
+ const mp=ev.target.closest('[data-matchpage]');
+ if(mp){state.matchPage=Math.max(0,Math.min(99,state.matchPage+Number(mp.dataset.matchpage)));fetchMatches();return}
+ const detail=ev.target.closest('[data-match-innings]');
+ if(detail){matchDetail(detail.dataset.matchInnings,detail.dataset.matchPlayer);return}
+ const side=ev.target.closest('[id^=compare-side-]');
+ if(side){
+   state.activeCompareSide=side.id.slice('compare-side-'.length);
+   document.querySelectorAll('.comparison-side-buttons button').forEach(
+     button=>button.classList.toggle('selected',button.id===side.id));
+   return;
  }
+ const chosen=ev.target.closest('[data-compare-id]');
+ if(chosen)chooseComparison(state.activeCompareSide,chosen.dataset.compareId);
 });
 $('#menu-button').addEventListener('click',()=>{const on=$('#sidebar').classList.toggle('open');$('#menu-button').setAttribute('aria-expanded',String(on))});
-window.addEventListener('hashchange',()=>{state.page=0;state.disciplinePage=0;state.disciplineMetric='greatness';render()});
+window.addEventListener('hashchange',()=>{state.page=0;state.disciplinePage=0;render()});
 render();
 })();
