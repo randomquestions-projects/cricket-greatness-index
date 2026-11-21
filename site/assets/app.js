@@ -388,7 +388,7 @@ async function compare(){
   '</div><div class="comparison-selects">'+slots+'</div>'+
   '<p class="note">'+(discipline==='batting'?
      'Published batting summaries use the historical derived batting model.':
-     'These experimental comparisons cover modern Cricsheet only.')+
+     'Comparisons use the source scope of the selected live ranking API; historic profiles, when present, remain provisional.')+
      ' Players can only be compared within the chosen discipline and format.</p></section>';
  await Promise.all(['first','second'].map(side=>searchComparison(side,serial)));
 }
@@ -618,7 +618,7 @@ function methodology(){
        '<article class="panel"><h3>'+E(a)+'</h3><p>'+E(b)+'</p></article>').join('')+
     '</div>'+qualifier)+
     historicalAudit(type)+
-    '<div class="callout"><strong>Publication status:</strong> The live bowling/all-rounder endpoints currently expose bounded, licensed modern Cricsheet-derived player summaries. Private all-era research includes restricted historical sources whose public-derived-results reuse basis and complete player/match identity crosswalk have not been certified. The private research ranking is not the live public ranking. No raw databases, deliveries, restricted scorecards or provider IDs are published.</div>';
+    '<div class="callout"><strong>Publication status:</strong> The actual live source scope is reported in Data & Coverage and the ranking banners. Modern-only public results and private full-source historical candidate rankings are distinct; an integrated live API must label its unverified historical player identities and incomplete coverage. Historical archive publication rights and the full identity crosswalk remain unresolved. No raw databases, deliveries, restricted scorecards or provider IDs are published.</div>';
 }
 
 async function render(){
