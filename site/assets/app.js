@@ -158,31 +158,42 @@ async function overview(){
   // bounded ranking API to filter before sorting/paginating for each format.
   const endpoint=current==='batting'?'rankings':'discipline-rankings';
   const metric=current==='batting'?'careerGreatness':'career';
-  for(const fmt of FORMATS){
+  for(const fmt of ALL){
    if(serial!==requestSerial||state.view!=='overview'||state.discipline!==current)return;
    const params={format:fmt,metric,fullMember:'yes',page:0};
    if(current!=='batting')params.discipline=current;
-   const response=await get(endpoint,params);
-   if(!Array.isArray(response.items))throw new Error('Invalid homepage rankings');
-   leaders[fmt]=response.items.slice(0,1);
+   try{
+    const response=await get(endpoint,params);
+    if(!Array.isArray(response.items))throw new Error('Invalid homepage rankings');
+    leaders[fmt]=response.items.slice(0,1);
+   }catch(error){
+    // Degraded combined-format queries must not hide the single-format leaders.
+    if(!COMBOS.includes(fmt))throw error;
+    leaders[fmt]=[];
+   }
   }
   if(serial!==requestSerial||state.view!=='overview'||state.discipline!==current)return;
   const statCards=numbers.map(([label,value])=>'<div class="stat"><small>'+E(label)+'</small><strong>'+
     E(typeof value==='string'?value:I(value))+'</strong></div>').join('');
-  const top=FORMATS.map(f=>{
+  const leaderCard=f=>{
    const p=(leaders[f]||[])[0];
    return '<a class="leader" href="#'+f+'"><small>'+E(LABEL[f])+'</small><h3>'+
-   E(p?.name||'Unavailable')+'</h3><p>'+E(p?.team||'')+' · '+(current==='batting'?
-   'Career greatness '+N(p?.careerGreatness):
-   'Career greatness '+N(p?.career))+' · '+I(p?.innings)+' innings</p>'+
-   '<span>Open '+E(name.toLowerCase())+' ranking →</span></a>';
-  }).join('');
+    E(p?.name||'Not yet available')+'</h3><p>'+(
+    p ? E(p.team||'')+' · Career greatness '+N(current==='batting'?
+       p.careerGreatness:p.career)+' · '+I(p.innings)+' innings' :
+       'No qualified or verified combined-format leader available')+'</p>'+
+    '<span>Open '+E(name.toLowerCase())+' ranking →</span></a>';
+  };
+  const top=FORMATS.map(leaderCard).join('');
+  const combined=COMBOS.map(leaderCard).join('');
   const tiles=ALL.map(f=>'<a class="view-card" href="#'+f+'"><small>'+E(name.toUpperCase())+' ANALYSIS</small>'+
    '<strong>'+E(LABEL[f])+'</strong><p>Explore '+E(name.toLowerCase())+
    ' results for this format.</p><span>Explore →</span></a>').join('');
   $('#page-body').innerHTML='<div class="stat-grid">'+statCards+'</div>'+
-    panel('Top career greatness · ICC Full Members',
-      '<p class="note">Current ICC Full Member national teams only · Ranked by Career Greatness · '+E(name.toLowerCase())+' · Test, ODI and T20I separately.</p><div class="trio">'+top+'</div>')+
+    panel('Single-format GOATs · Career Greatness · ICC Full Members',
+      '<p class="note">Current ICC Full Member national teams only · Career Greatness, ranked separately for Tests, ODIs and T20Is.</p><div class="trio">'+top+'</div>')+
+    panel('Multi-format GOATs · Career Greatness · ICC Full Members',
+      '<p class="note">Tests + ODIs and All Three Formats. Players must qualify in every included format with the same verified player ID. Scores use within-format percentiles, not raw totals. Historical all-era completeness is not certified for bowling or all-rounders.</p><div class="two">'+combined+'</div>')+
     panel('Explore '+E(name.toLowerCase())+' research','<div class="view-grid">'+tiles+'</div>')+
     '<p class="note">'+(current==='batting'?
       'Published batting remains the previously validated derived snapshot; new historical rebuild comparisons are under review.':
