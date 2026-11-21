@@ -1,0 +1,66 @@
+name: One-time verified retirement of archived public cricket releases
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/retire-backed-up-releases-once.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: retire-verified-cricket-legacy-releases
+  cancel-in-progress: false
+
+jobs:
+  retire:
+    if: github.repository == 'randomquestions-projects/cricket-greatness-index' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify retirement script is the pinned, independently tested implementation
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:.github/scripts/retire_legacy_cricket_releases.py)" = 'db0d7bfac71919a4d5a4a5c65aa9c0a3cc32d374'
+          python -m unittest discover -s tests -p 'test_cricket_release_retirement.py' -v
+      - name: Verify exactly 3 already archived public Releases and 26 assets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .github/scripts/retire_legacy_cricket_releases.py
+      - name: Remove only the verified, backed-up releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python .github/scripts/retire_legacy_cricket_releases.py --apply \
+            --confirmation 'RETIRE-3-VERIFIED-CRICKET-RELEASES' \
+            --asset-manifest-sha 'd2fc81858b1040649834029a593147ecac29a5cd6f8425b578613f4009b10816' \
+            --git-history-manifest-sha 'b6fcbf438a6e5d0222b10feaced7024af35bb328f1a453f072dc383f5328afbe'
+      - name: Confirm public releases absent
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request,urllib.error
+          base='https://api.github.com/repos/randomquestions-projects/cricket-greatness-index/releases/tags/'
+          tags=[
+            'cricket-master-source-13f9f5d5153c3625',
+            'cricket-scorecards-source-13f9f5d5153c3625',
+            'cricket-master-2026-11-09-42707561618',
+          ]
+          for tag in tags:
+              req=urllib.request.Request(base+tag,headers={
+                  'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],
+                  'Accept':'application/vnd.github+json'})
+              try:
+                  urllib.request.urlopen(req,timeout=20)
+              except urllib.error.HTTPError as e:
+                  if e.code==404:continue
+                  raise
+              raise AssertionError('Still public: '+tag)
+          print('Confirmed all three backed-up release tags have no public Releases.')
+          PY
