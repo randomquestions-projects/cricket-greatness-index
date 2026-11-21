@@ -137,7 +137,7 @@ async function overview(){
   'Explore independent Test, ODI and T20I research using available derived statistics; rankings remain provisional, with different historical coverage by discipline.');
  $('#page-body').innerHTML='<div class="panel">Loading '+E(name.toLowerCase())+' research overview…</div>';
  try{
-  let formats=[],leaders={},numbers=[];
+  let formats=[],leaders={},numbers=[],integratedHistory=false;
   if(current==='batting'){
    formats=FORMATS.map(f=>meta.formats[f]||{});
    // The homepage has its own consistent leaderboard definition:
@@ -149,9 +149,10 @@ async function overview(){
     ['Eligible batters',formats.map(f=>I(f.qualifiedPlayers)).join(' / ')]];
   }else{
    const d=await get('disciplines');
+   integratedHistory=d.historicalRestrictedSourcesIncluded===true;
    formats=FORMATS.map(f=>d.formats?.[current]?.[f]||{});
    numbers=FORMATS.map((f,i)=>[LABEL[f]+' qualified players',formats[i].qualifiedPlayers]);
-   numbers.push(['Source tier','Modern Cricsheet only']);
+   numbers.push(['Live source coverage',integratedHistory?'Integrated observed historical + modern (provisional)':'Licensed modern Cricsheet only']);
   }
   // Do not choose the first member of a globally ranked bootstrap top-three:
   // that misses qualified Full Members below the first few positions. Ask the
@@ -193,11 +194,11 @@ async function overview(){
     panel('Single-format GOATs · Career Greatness · ICC Full Members',
       '<p class="note">Current ICC Full Member national teams only · Career Greatness, ranked separately for Tests, ODIs and T20Is.</p><div class="trio">'+top+'</div>')+
     panel('Multi-format GOATs · Career Greatness · ICC Full Members',
-      '<p class="note">Tests + ODIs and All Three Formats. Players must qualify in every included format with the same verified player ID. Scores use within-format percentiles, not raw totals. Historical all-era completeness is not certified for bowling or all-rounders.</p><div class="two">'+combined+'</div>')+
+      '<p class="note">Tests + ODIs and All Three Formats. Players must qualify in every included format. Modern careers use verified provider IDs; historical cross-format identities are evidence-labeled candidates. Scores use within-format percentiles, not raw totals, and all-era completeness remains unverified.</p><div class="two">'+combined+'</div>')+
     panel('Explore '+E(name.toLowerCase())+' research','<div class="view-grid">'+tiles+'</div>')+
     '<p class="note">'+(current==='batting'?
       'Published batting remains the previously validated derived snapshot; new historical rebuild comparisons are under review.':
-      'New bowling and all-rounder rankings use only modern Cricsheet source-qualified identities. Historical all-era rankings are not yet certified.')+
+      (integratedHistory?'The live API includes historical and modern observed-career research candidates. Cross-source identities and comprehensive historical coverage are not independently certified.':'The live bowling and all-rounder rankings use licensed modern Cricsheet records. Full-source historical research is retained privately and is not yet shown as live rankings.'))+
     '</p>';
  }catch(e){if(serial===requestSerial)showError($('#page-body'),e)}
 }
@@ -222,7 +223,7 @@ async function disciplineRanking(fmt){
  const metricOptions=Object.entries(D_METRICS[discipline]).map(([key,label])=>
    '<option value="'+E(key)+'"'+(key===metric?' selected':'')+'>'+E(label)+'</option>').join('');
  $('#page-body').innerHTML='<div class="callout">Provisional '+E(name.toLowerCase())+
-   ' research · Modern Cricsheet only · Historical player identities are not fully reconciled.'+
+   ' research · Source scope verified from the rankings API; historical identities, when present, remain provisional.'+
    (COMBOS.includes(fmt)?' Combined rankings require the same verified provider ID in every selected format and average within-format metric percentiles.':'')+
    '</div><section class="section"><div class="controls">'+
    '<label>Rank by<select id="discipline-metric">'+metricOptions+'</select></label>'+
@@ -238,6 +239,10 @@ async function disciplineRanking(fmt){
   if(serial!==requestSerial||state.view!==fmt||state.discipline!==discipline)return;
   if(result.schemaVersion!=='cricket-discipline-projection-v1')
       throw new Error('Unexpected research schema');
+   const historical=result.historicalRestrictedSourcesIncluded===true;
+   const intro=document.querySelector('#page-body > .callout');
+   if(intro)intro.textContent=(historical?'Integrated historical + modern observed-career ranking (provisional). Historical cross-source identities and full career coverage are not certified.':'Licensed modern Cricsheet-only ranking; historical research remains private and is not used by this live view.')+
+     (COMBOS.includes(fmt)?' Two/three-format scores require evidence-supported player matches across included formats.':'');
    paintInningsFilter(result.inningsBounds);
   const head=discipline==='bowling'?
     ['Rank','Bowler / country',D_METRICS[discipline][metric],
@@ -278,7 +283,7 @@ function disciplineCard(p,fmt,discipline){
    '</small><h3>'+E(p.name)+'</h3><div class="research-metric-grid">'+
    columns.map(([k,v])=>'<div><small>'+E(k)+'</small><b>'+N(v)+'</b></div>').join('')+
    '</div><p class="note">Provisional '+E(discipline==='bowling'?'bowling':'all-rounder')+
-   ' research from modern-only records.'+
+   ' research from source-qualified observed data; historical source scope and identity uncertainty are shown in Data & Coverage.'+
    (COMBOS.includes(fmt)?' Combined scores are within-format normalized percentiles.':'')+
    '</p></article>';
 }
@@ -540,6 +545,7 @@ async function coverage(){
  try{
   const d=await get('disciplines');
   if(serial!==requestSerial||state.view!=='coverage'||state.discipline!==selected)return;
+  const historical=d.historicalRestrictedSourcesIncluded===true;
   const rows=FORMATS.map(f=>{
    const x=d.formats?.[selected]?.[f]||{};
    return '<tr><td>'+E(LABEL[f])+'</td><td>'+I(x.qualifiedPlayers)+'</td>'+
@@ -548,7 +554,7 @@ async function coverage(){
   $('#page-body').innerHTML=panel('Live public '+E(selected)+' player coverage',
     table(['Format','Qualified public profiles','Live data scope'],rows))+
     historicalAudit(selected)+
-   '<div class="callout">Live bowling and all-rounder rankings still use licensed modern Cricsheet-derived player summaries. The historical counts above describe a separate, successfully rebuilt private model—not live player profiles. Historical source permissions, individual cross-source identities, and an authoritative match census remain unresolved. Combined formats require eligibility in each constituent format.</div>';
+   '<div class="callout">'+(historical?'This API currently serves integrated historical and modern observed-career summaries. Historical player/match identity and source-coverage claims remain provisional; no scorecards or raw archives are available.':'This API currently serves licensed modern Cricsheet-only rankings. The private historical research counts above are not live player profiles.')+' Publication rights for the underlying historical source archives remain unresolved. Combined-format players must qualify separately in each format.</div>';
  }catch(e){if(serial===requestSerial)showError($('#page-body'),e)}
 }
 /* Source coverage counts below refer to the completed, verified private S3
