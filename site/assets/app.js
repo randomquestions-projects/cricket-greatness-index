@@ -545,38 +545,74 @@ async function coverage(){
    return '<tr><td>'+E(LABEL[f])+'</td><td>'+I(x.qualifiedPlayers)+'</td>'+
     '<td>'+E(x.coverage||'Modern-only Cricsheet')+'</td></tr>';
   });
-  $('#page-body').innerHTML=panel('Source-approved '+E(selected)+' player coverage',
-    table(['Format','Qualified players','Data scope'],rows))+
-   '<div class="callout">Only modern Cricsheet-derived player summaries are published for this discipline. Historical bowling archives, unverified player crosswalks and independent official match census remain private or unverified. Combined formats require qualification in every component format.</div>';
+  $('#page-body').innerHTML=panel('Live public '+E(selected)+' player coverage',
+    table(['Format','Qualified public profiles','Live data scope'],rows))+
+    historicalAudit(selected)+
+   '<div class="callout">Live bowling and all-rounder rankings still use licensed modern Cricsheet-derived player summaries. The historical counts above describe a separate, successfully rebuilt private model—not live player profiles. Historical source permissions, individual cross-source identities, and an authoritative match census remain unresolved. Combined formats require eligibility in each constituent format.</div>';
  }catch(e){if(serial===requestSerial)showError($('#page-body'),e)}
+}
+/* Source coverage counts below refer to the completed, verified private S3
+   research build of November 21, 2026, NOT to an approved public ranking.
+   They are aggregate diagnostics, not a hidden player dataset. */
+const HISTORICAL_RESEARCH_AUDIT={
+ bowling:{test:375,odi:483,t20i:508,test_odi:167,all_three:56},
+ allrounder:{test:329,odi:342,t20i:281,test_odi:137,all_three:27}
+};
+function historicalAudit(discipline){
+ const counts=HISTORICAL_RESEARCH_AUDIT[discipline];
+ if(!counts)return '';
+ const rows=ALL.map(fmt=>'<tr><td>'+E(LABEL[fmt])+'</td><td>'+I(counts[fmt])+
+   '</td></tr>');
+ return panel('Private all-era research · Nov 21, 2026',
+    '<p class="note">Historical and modern source observations were used to build a separate, integrated research ranking for all five formats. These are qualified <strong>research source groups/candidates</strong>, not necessarily unique, independently verified complete careers. These counts are not the number of rows in the live public leaderboard.</p>'+
+    table(['Format','Private ranked research records'],rows)+
+    '<p class="note">Private build: 195,226 canonical historical bowling observations, 158,191 historical batting innings, and 7,165 modern matches. Nine of nine selected retired Test wicket aggregates reconcile; that does not certify every scorecard, identity, or era model.</p>');
 }
 function methodology(){
  const type=state.discipline, title={batting:'Batting',bowling:'Bowling',allrounder:'All-Rounder'}[type];
  hero(E(title)+' <em>index methodology</em>',
-  'An explanation of the selected discipline’s derived research metrics, limitations and comparisons.');
- let items;
- if(type==='batting')items=[
-  ['Era-adjusted quality','Compare batting performance with peers in the same era and format.'],
-  ['Opposition strength','Use opponent quality proxies where evidence is available.'],
-  ['Team carry','Evaluate contribution relative to observed teammates.'],
-  ['Home and away','Use known venue context while leaving uncertain venues unknown.'],
-  ['Peak and longevity','Combine career performance, strongest seasons, and JAWS-style measures.']];
- else if(type==='bowling')items=[
-  ['Bowling effectiveness','Measure wickets per legal delivery and runs conceded against similar-era peers.'],
-  ['Opponent-conditioned peers','Where enough observations exist, compare bowlers against peers facing the same opposition. This is not an independently validated opponent batting-strength score.'],
-  ['Era and evidence','Use source-tier-matched, leave-player-out ±3-year references and evidence-based shrinkage.'],
-  ['Career and peak','Include career totals and seven strongest seasons to separate longevity from peak.'],
-  ['Provisional scope','Public outputs use approved modern Cricsheet summaries; cross-era historical bowling certification is incomplete.']];
- else items=[
-  ['Independent components','Rank the player’s batting and bowling performances separately within the same format.'],
-  ['Balanced contribution','Combine each discipline percentile using a harmonic mean, penalizing players weak in either skill.'],
-  ['Verified identities','Join batting and bowling using the same immutable Cricsheet provider ID and compatible team.'],
-  ['Qualification','Players must meet the individual batting and bowling model eligibility thresholds.'],
-  ['Combined formats','Test+ODI and All Three Formats average independently normalized metric percentiles among players qualified in every selected format.']];
- $('#page-body').innerHTML=panel('How the '+E(title.toLowerCase())+' ranking works',
-   '<div class="trio">'+items.map(([a,b])=>'<article class="panel"><h3>'+E(a)+'</h3>'+
-   '<p>'+E(b)+'</p></article>').join('')+'</div>'+
-   '<p class="note">These are provisional analytical outputs; official all-time match coverage is not certified.</p>');
+  'How career scores, peak scores and cross-era adjustments are calculated; what has been validated and what remains provisional.');
+ if(type==='batting'){
+   const items=[
+     ['Era-adjusted quality','Compare batting performances against source-era and format peers, preserving uncertain history as missing rather than inventing innings.'],
+     ['Opposition and context','Use peer-supported opposition quality, team-relative performance and available venue context; explicitly flag low-evidence adjustments.'],
+     ['Career greatness','Reward accumulated adjusted career contribution, with qualification and sample-size safeguards.'],
+     ['Peak and JAWS','Report peak separately and a JAWS-inspired career-plus-peak comparison. Do not interpret those as official ratings.'],
+     ['Combined formats','Normalize rankings within each eligible format, then combine percentiles only for suitably linked players.']
+   ];
+   $('#page-body').innerHTML=panel('How batting greatness is calculated',
+      '<div class="trio">'+items.map(([a,b])=>'<article class="panel"><h3>'+E(a)+'</h3><p>'+E(b)+'</p></article>').join('')+'</div>'+
+      '<p class="note">Batting currently uses the already published derived ranking snapshot. A separate full-source model rebuild is under review; historical completeness is not certified.</p>');
+   return;
+ }
+ const qualifier='<p class="note">Qualification minima: Test batting 35 innings / bowling 40 innings; ODI 35 / 35; T20I 25 / 25. A bowler only needs the bowling minimum, while an all-rounder must pass both within the same format. These are analytical thresholds, not official career eligibility rules.</p>';
+ const bowling=[
+  ['1. Build a valid historical record','Use the canonical deduplicated historic bowling warehouse together with modern Cricsheet matches. Exclude conflicting duplicates and missing bowling figures. Source-qualified fragments are merged only with corroborating evidence; uncertain careers remain separately identified research candidates.'],
+  ['2. Set a fair peer expectation','Estimate wicket-taking and run-concession rates using leave-bowler-out, same-format, same-source-tier peers within ±3 years. Where there is sufficient evidence, partially condition on opposition. Modern venue information may help when known; historical pitch conditions are not fabricated.'],
+  ['3. Measure impact, not raw wickets alone','Expected wickets = legal balls × peer wickets per ball. Expected runs = legal balls × peer conceded runs per ball. Wicket surplus = actual wickets − expected wickets. Runs prevented = expected runs − actual conceded runs. Convert runs prevented to contemporary wicket equivalents using the peer runs-per-wicket ratio.'],
+  ['4. Calculate Career Greatness','Career bowling value is the sum of wicket surplus plus run-prevention wicket equivalents across observed qualified innings. Negative performances reduce the score; consistent success and longevity are rewarded. The research Career Index is its tie-aware percentile within format among qualified observed career groups.'],
+  ['5. Distinguish peak from career','A separately standardized peak model evaluates the strongest eligible seven seasons. The JAWS-style Greatness Index averages career and peak percentiles, not incomparable raw runs/wickets. Era-adjusted quality remains distinct from both longevity and peak.'],
+  ['6. Validate and flag incomplete careers','Selected retired Test career wicket aggregates reconcile 9/9, including Warne, Muralitharan, McGrath, Kumble and others. Aggregate agreement is not evidence that every innings has an authoritative player/match crosswalk. The rank sensitivity audit varies the run-prevention weight from 0.5× to 1.5×.']
+ ];
+ const allrounder=[
+  ['1. Require both disciplines','A player must have enough observed batting innings and bowling innings in the same format to qualify for both underlying models. Do not classify a batting-only or bowling-only specialist as an eligible all-rounder.'],
+  ['2. Build independent batting and bowling strength','Evaluate era-adjusted batting Career Greatness and bowling Career Value independently, using peers within their format/source context. Their raw model units cannot be added directly.'],
+  ['3. Reward balanced careers','Convert both disciplines to within-cohort percentiles, then combine using the harmonic mean: 2 × batting percentile × bowling percentile ÷ (batting percentile + bowling percentile). This penalizes a weak second discipline instead of allowing one elite skill to dominate.'],
+  ['4. Normalize Career and JAWS separately','The Career Index ranks the harmonic career balance against other qualified candidate all-rounders. The JAWS-style score separately combines the two disciplines’ career-plus-peak percentiles, then reranks that result. Missing peak evidence is not invented.'],
+  ['5. Reconcile historical player identities','Modern batting and bowling are joined by the same Cricsheet provider ID. Historical candidates must have a unique name/initial/team candidate plus at least three matching dated format/team/opponent fixture observations. These remain evidence-labeled proposals, not official identity matches.'],
+  ['6. Calculate two-format and all-format rankings','Tests + ODIs requires both eligible formats; All Three requires Test, ODI and T20I. Average within-format career percentiles for qualified candidate identities; uncertain historical cross-format matches remain explicitly flagged.']
+ ];
+ const items=type==='bowling'?bowling:allrounder;
+ const headline=type==='bowling'?'Wickets above expectation + runs prevented':'Balanced batting + bowling contribution';
+ const intro=type==='bowling'?
+  'The model values dismissals AND containment in era-adjusted wicket-equivalent units. Separate Career, Quality, Peak and JAWS-style scores prevent raw wicket totals or a single short peak from defining the ranking.':
+  'Batting and bowling are scored independently, then balanced using a harmonic mean of their model percentiles. Career Greatness is the default ranking; peak-balanced JAWS remains a separate view.';
+ $('#page-body').innerHTML=panel(headline,
+    '<p>'+E(intro)+'</p><div class="trio">'+items.map(([a,b])=>
+       '<article class="panel"><h3>'+E(a)+'</h3><p>'+E(b)+'</p></article>').join('')+
+    '</div>'+qualifier)+
+    historicalAudit(type)+
+    '<div class="callout"><strong>Publication status:</strong> The live bowling/all-rounder endpoints currently expose bounded, licensed modern Cricsheet-derived player summaries. Private all-era research includes restricted historical sources whose public-derived-results reuse basis and complete player/match identity crosswalk have not been certified. The private research ranking is not the live public ranking. No raw databases, deliveries, restricted scorecards or provider IDs are published.</div>';
 }
 
 async function render(){
