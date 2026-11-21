@@ -180,9 +180,24 @@ def run():
                     page.locator("#compare-second-result h3").wait_for(timeout=20000)
                     checked.append(discipline+"-comparison")
                     page.goto(origin+"/#methodology")
-                    assert discipline in page.locator("#page-body").inner_text().lower().replace("-","")
+                    methodology=page.locator("#page-body").inner_text()
+                    assert discipline in methodology.lower().replace("-","")
+                    assert "Private all-era research" in methodology
+                    assert "195,226" in methodology
+                    assert "Career" in methodology and "JAWS" in methodology
+                    if discipline=="bowling":
+                        assert "Wickets above expectation" in methodology
+                        assert "Runs prevented" in methodology or "runs prevented" in methodology
+                    else:
+                        assert "harmonic mean" in methodology
+                        assert "three matching dated" in methodology
                     page.goto(origin+"/#coverage")
                     page.locator("#page-body .section").first.wait_for(timeout=20000)
+                    coverage=page.locator("#page-body").inner_text()
+                    assert "Private all-era research" in coverage
+                    assert "not live player profiles" in coverage
+                    assert "195,226" in coverage
+                    checked.append(discipline+"-historical-methodology-and-coverage")
                     page.goto(origin+"/#matches")
                     page.locator("#match-results").wait_for(timeout=15000)
                     page.wait_for_function("""() => {
