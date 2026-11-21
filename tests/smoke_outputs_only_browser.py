@@ -78,7 +78,12 @@ def run():
                 page.goto(origin+"/#overview")
                 page.locator(".leader").first.wait_for(timeout=25000)
                 assert "Cricket Greatness" in page.title()
-                assert "Top career greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                assert "Single-format GOATs · Career Greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                assert "Multi-format GOATs · Career Greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                assert page.locator(".leader").count()==5, "Overview must show 3 single-format + 2 combined-format leaders"
+                assert [x.inner_text() for x in page.locator(".leader small").all()] == [
+                    "Test Cricket","One-Day Internationals","T20 Internationals",
+                    "Tests + ODIs","All Three Formats"]
                 full_members={"Afghanistan","Australia","Bangladesh","England",
                               "India","Ireland","New Zealand","Pakistan",
                               "South Africa","Sri Lanka","West Indies","Zimbabwe"}
@@ -86,7 +91,15 @@ def run():
                     leader=page.locator(".leader").nth(index).inner_text()
                     assert any(country in leader for country in full_members), leader
                     assert "Career greatness" in leader
-                checked=["overview-full-member-career-leaders"]
+                for index in (3,4):
+                    # Combined-format APIs are independently staged. If unavailable,
+                    # render a clear placeholder rather than stale/wrong source data.
+                    combined_card=page.locator(".leader").nth(index).inner_text()
+                    assert ("Career greatness" in combined_card or
+                            "No qualified or verified combined-format leader available" in combined_card)
+                    if "Career greatness" in combined_card:
+                        assert any(country in combined_card for country in full_members), combined_card
+                checked=["overview-five-career-goat-leaders"]
                 for name in ("test","odi","t20i","test_odi","all_three"):
                     page.goto(origin+"/#"+name)
                     page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
@@ -117,12 +130,20 @@ def run():
                     page.locator("#global-discipline").select_option(discipline)
                     page.goto(origin+"/#overview")
                     page.locator(".leader").first.wait_for(timeout=25000)
-                    assert "Top career greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                    assert "Single-format GOATs · Career Greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                    assert "Multi-format GOATs · Career Greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                    assert page.locator(".leader").count()==5
                     for index in range(3):
                         leader=page.locator(".leader").nth(index).inner_text()
                         assert any(country in leader for country in full_members), (discipline,leader)
                         assert "Career greatness" in leader
-                    checked.append(discipline+"-full-member-career-overview")
+                    for index in (3,4):
+                        combined_card=page.locator(".leader").nth(index).inner_text()
+                        assert ("Career greatness" in combined_card or
+                                "No qualified or verified combined-format leader available" in combined_card)
+                        if "Career greatness" in combined_card:
+                            assert any(country in combined_card for country in full_members), (discipline,combined_card)
+                    checked.append(discipline+"-five-career-goat-leaders")
                     for fmt in ("test","odi","t20i"):
                         page.goto(origin+"/#"+fmt)
                         page.locator("#discipline-results tbody tr").first.wait_for(timeout=25000)
