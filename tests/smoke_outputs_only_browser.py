@@ -78,7 +78,15 @@ def run():
                 page.goto(origin+"/#overview")
                 page.locator(".leader").first.wait_for(timeout=25000)
                 assert "Cricket Greatness" in page.title()
-                checked=["overview"]
+                assert "Top career greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                full_members={"Afghanistan","Australia","Bangladesh","England",
+                              "India","Ireland","New Zealand","Pakistan",
+                              "South Africa","Sri Lanka","West Indies","Zimbabwe"}
+                for index in range(3):
+                    leader=page.locator(".leader").nth(index).inner_text()
+                    assert any(country in leader for country in full_members), leader
+                    assert "Career greatness" in leader
+                checked=["overview-full-member-career-leaders"]
                 for name in ("test","odi","t20i","test_odi","all_three"):
                     page.goto(origin+"/#"+name)
                     page.locator("#output-results tbody tr").first.wait_for(timeout=20000)
@@ -107,6 +115,14 @@ def run():
                 assert page.locator("aside [data-view='bowling']").count()==0
                 for discipline in ("bowling","allrounder"):
                     page.locator("#global-discipline").select_option(discipline)
+                    page.goto(origin+"/#overview")
+                    page.locator(".leader").first.wait_for(timeout=25000)
+                    assert "Top career greatness · ICC Full Members" in page.locator("#page-body").inner_text()
+                    for index in range(3):
+                        leader=page.locator(".leader").nth(index).inner_text()
+                        assert any(country in leader for country in full_members), (discipline,leader)
+                        assert "Career greatness" in leader
+                    checked.append(discipline+"-full-member-career-overview")
                     for fmt in ("test","odi","t20i"):
                         page.goto(origin+"/#"+fmt)
                         page.locator("#discipline-results tbody tr").first.wait_for(timeout=25000)
