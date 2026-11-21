@@ -570,7 +570,7 @@ function historicalAudit(discipline){
  const rows=ALL.map(fmt=>'<tr><td>'+E(LABEL[fmt])+'</td><td>'+I(counts[fmt])+
    '</td></tr>');
  return panel('Private all-era research · Nov 21, 2026',
-    '<p class="note">Historical and modern source observations were used to build a separate, integrated research ranking for all five formats. These are qualified <strong>research source groups/candidates</strong>, not necessarily unique, independently verified complete careers. These counts are not the number of rows in the live public leaderboard.</p>'+
+    '<p class="note">Historical and modern source observations were used to build a separate, integrated research ranking for all five formats. These are qualified <strong>research source groups/candidates</strong>, not necessarily unique, independently verified complete careers. These counts describe research cohorts; Data & Coverage shows the number of profiles actually served by the live ranking API.</p>'+
     table(['Format','Private ranked research records'],rows)+
     '<p class="note">Private build: 195,226 canonical historical bowling observations, 158,191 historical batting innings, and 7,165 modern matches. Nine of nine selected retired Test wicket aggregates reconcile; that does not certify every scorecard, identity, or era model.</p>');
 }
